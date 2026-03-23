@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Yak Club",
+  "name": "Popup Video",
   "version": "1.0",
 
   "description": "Chat about any website",
@@ -15,20 +15,18 @@
   "content_security_policy": {
     "extension_pages": "worker-src 'self'; script-src 'self' 'wasm-unsafe-eval'"
   },
-  "side_panel": {
-    "default_path": "index.html"
-  },
-  "sidebar_action": {
-    "default_title": "Yak Club",
-    "default_panel": "index.html",
-    "default_icon": "icons/logo-64.png"
-  },
+  "content_scripts": [
+    {
+       "matches": ["https://*.youtube.com/*"],
+       "run_at": "document_idle",
+       "all_frames": true,
+       "css": ["default.css"],
+       "js": ["content-script.js"]
+    }
+  ],
   "permissions": [
     "webRequest",
-    "unlimitedStorage",
-    "activeTab",
-    "sidePanel",
-    "tabs"
+    "unlimitedStorage"
   ],
   "action": {
     "default_popup": "index.html",
