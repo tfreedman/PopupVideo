@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Yak Club",
+  "version": "1.0",
+
+  "description": "Chat about any website",
+
+  "icons": {
+    "48": "icons/logo-48.png"
+  },
+  "background": {
+    "service_worker": "service-worker.js",
+    "scripts": []
+  },
+  "content_security_policy": {
+    "extension_pages": "worker-src 'self'; script-src 'self' 'wasm-unsafe-eval'"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "sidebar_action": {
+    "default_title": "Yak Club",
+    "default_panel": "index.html",
+    "default_icon": "icons/logo-64.png"
+  },
+  "permissions": [
+    "webRequest",
+    "unlimitedStorage",
+    "activeTab",
+    "sidePanel",
+    "tabs"
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Click to open chat",
+    "default_icon": {
+      "16": "icons/logo-16.png",
+      "32": "icons/logo-32.png",
+      "64": "icons/logo-64.png",
+      "128": "icons/logo-128.png"
+    }
+  }
+}

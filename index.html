@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="default.css" media="all" />
+    <link rel="stylesheet" href="micromodal.css" media="all" />
+    <title>Yak Club</title>
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192"  href="/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/webmanifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <div id="parent">
+      <div id="gradient"></div>
+      <div id="topbar">
+        <nav>
+          <div class="left">
+            <a id="backBtn" href="#">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M576 320C576 178.6 461.4 64 320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576C461.4 576 576 461.4 576 320zM335 199C344.4 189.6 359.6 189.6 368.9 199C378.2 208.4 378.3 223.6 368.9 232.9L281.9 319.9L368.9 406.9C378.3 416.3 378.3 431.5 368.9 440.8C359.5 450.1 344.3 450.2 335 440.8L231 337C221.6 327.6 221.6 312.4 231 303.1L335 199z"/></svg>
+            </a>
+            <a href="#" class="active" id="logoLink">
+              <img id="logo" src="/logo.svg" />
+              <img id="logo-mini" src="/logo-mini.svg" />
+            </a>
+            <div class="middle">
+              <h1 class="title" id="title"></h1>
+              <div id="room-buttons"></div>
+              <h2 class="subtitle" id="subtitle"></h2>
+            </div>
+          </div>
+
+          <div class="right">
+            <div id="search-container">
+              <a href="#" data-tippy="Search or Create" id="search"><span><svg style="transform: scale(1.25)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M480 272C480 317.9 465.1 360.3 440 394.7L566.6 521.4C579.1 533.9 579.1 554.2 566.6 566.7C554.1 579.2 533.8 579.2 521.3 566.7L394.7 440C360.3 465.1 317.9 480 272 480C157.1 480 64 386.9 64 272C64 157.1 157.1 64 272 64C386.9 64 480 157.1 480 272zM272 176C258.7 176 248 186.7 248 200L248 248L200 248C186.7 248 176 258.7 176 272C176 285.3 186.7 296 200 296L248 296L248 344C248 357.3 258.7 368 272 368C285.3 368 296 357.3 296 344L296 296L344 296C357.3 296 368 285.3 368 272C368 258.7 357.3 248 344 248L296 248L296 200C296 186.7 285.3 176 272 176z"/></svg> Search or Create</span></a>
+              <div id="search-wrapper">
+                <input type="text" name="search-bar" id="search-bar" placeholder="room/domain/npub/note/nevent" />
+              </div>
+              <a href="#" id="xmark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg></a>
+            </div>
+            <a class="modal-info-button" data-tippy="Info" data-micromodal-trigger="modal-info" href="#"><span><svg id="info" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336l24 0 0-64-24 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l48 0c13.3 0 24 10.7 24 24l0 88 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg> Info</span></a>
+
+            <a class="modal-account-button post-boot" data-tippy="Account" data-micromodal-trigger="modal-account" href="#"><span><img class="avatar" src="circle-user.svg" /> Account</span></a>
+
+            <a href="#" class="post-boot tab" id="alertsLink" data-tippy="Alerts"><span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M320 64C302.3 64 288 78.3 288 96L288 99.2C215 114 160 178.6 160 256L160 277.7C160 325.8 143.6 372.5 113.6 410.1L103.8 422.3C98.7 428.6 96 436.4 96 444.5C96 464.1 111.9 480 131.5 480L508.4 480C528 480 543.9 464.1 543.9 444.5C543.9 436.4 541.2 428.6 536.1 422.3L526.3 410.1C496.4 372.5 480 325.8 480 277.7L480 256C480 178.6 425 114 352 99.2L352 96C352 78.3 337.7 64 320 64zM258 528C265.1 555.6 290.2 576 320 576C349.8 576 374.9 555.6 382 528L258 528z"/></svg><div id="alertsIndicator"></div> Alerts</span></a>
+          </div>
+        </nav>
+      </div>
+
+      <div id="container">
+        <article id="loading">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle fill="#2d6084" stroke="#2d6084" stroke-width="2" r="15" cx="40" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="-.4"></animate></circle><circle fill="#2d6084" stroke="#2d6084" stroke-width="2" r="15" cx="100" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="-.2"></animate></circle><circle fill="#2d6084" stroke="#2d6084" stroke-width="2" r="15" cx="160" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="0"></animate></circle></svg>
+        </article>
+
+        <article id="yak">
+          <div class="toasts-container">
+            <div class="toasts"></div>
+            <div class="toasts-loading"><p>Loading all channels...</p></div>
+            <div class="toasts-empty">:(</div>
+          </div>
+
+          <div id="newToastContainer" class="hidden"></div>
+        </article>
+
+        <article id="alerts">
+          <div class="toasts-container">
+            <div class="toasts"></div>
+            <div class="toasts-loading"><p>Loading all alerts...</p></div>
+            <div class="toasts-empty">:(</div>
+          </div>
+        </article>
+      </div>
+
+      <div id="emoji-picker"></div>
+    </div>
+    <footer id="footer"></footer>
+
+
+    <div class="modal micromodal-slide" id="modal-info" aria-hidden="true">
+      <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-info-title">
+          <header class="modal__header">
+            <h1 class="modal__title" id="modal-info-title">
+              About
+            </h1>
+            <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+          </header>
+          <main class="modal__content" id="modal-info-content">
+            <p><img src="/logo.svg" alt="Yak Club"/> is a decentralized Nostr app that lets you chat with others using the Nostr protocol. Yak Club is available at <a href="https://yak.club">Yak.club</a> - it's also available as a browser extension <a href="#">here</a>. The browser extension functions identically to the website, but lets you instantly click the extension to see messages for the site you're currently on (if a room exists that matches the current domain name). The icon lights up automatically when you're on a website with existing messages.</p>
+
+            <p>For privacy reasons, Yak Club scrapes all known channels from the relays you're connected to, stores them in your browser, and then filters based on the exact domain you're looking at to avoid leaking search queries or your browser history.</p>
+
+            <h2>Channels</h2>
+            <p>A channel is defined as a kind 40 event, with tags <em>['r', &lt;room name&gt;], ['t', 'yakclub']</em>. Responses to channels are currently implemented as kind 42 events.</p>
+
+            <p>Yak Club implements NIP-07. However, <em>browser extensions cannot interact with other browser extensions</em>, so the extension version of Yak Club requires your nsec / preferred nostr relays in order to work. This limitation does not apply to the web version, which is compatible with extensions like nos2x.</p>
+
+            <p>Yak Club does not currently implement encrypted messaging, so user <-> user chats aren't currently supported. Assume all messages are public.</p>
+          </main>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal micromodal-slide" id="modal-account" aria-hidden="true">
+      <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-account-title">
+          <header class="modal__header">
+            <h1 class="modal__title" id="modal-account-title">
+              Account
+            </h1>
+            <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+          </header>
+          <main class="modal__content" id="modal-account-content">
+            <div>
+              <h2>Profile</h2>
+              <div id="profile">
+                <form>
+                  <img class="avatar" src="circle-user.svg" />
+
+                  <div class="field">
+                    <label for="name">Name:</label>
+                    <input name="name" value="" type="text" class="input" />
+                  </div>
+                  <div class="field">
+                    <label for="display_name">Display Name:</label>
+                    <input name="display_name" value="" type="text" class="input" />
+                  </div>
+                  <div class="field">
+                    <label for="about">About:</label>
+                    <textarea name="about" value="" type="text" class="input"></textarea>
+                  </div>
+                  <div class="field">
+                    <label for="website">Website:</label>
+                    <input name="website" value="" type="url" class="input" />
+                  </div>
+
+                  <div class="banner-upload-group">
+                    <label for="banner">Banner:</label>
+                    <br />
+                    <button type="button" class="banner-upload active">From a File</button>
+                    <button type="button" class="banner-url">From a URL</button>
+                    <br />
+
+                    <div class="field upload active">
+                      <label for="file">File (PNG/JPG/WebP): <span class="banner-message"></span></label>
+                      <input name="file" type="file" accept="image/png, image/jpeg, image/webp" />
+                    </div>
+
+                    <div class="field url hidden">
+                      <label for="banner">URL:</label>
+                      <input name="banner" value="" type="url" class="input" />
+                    </div>
+                  </div>
+
+                  <div class="picture-upload-group">
+                    <label for="picture">Picture:</label>
+                    <br />
+                    <button type="button" class="picture-upload active">From a File</button>
+                    <button type="button" class="picture-url">From a URL</button>
+                    <br />
+
+                    <div class="field upload active">
+                      <label for="file">File (PNG/JPG/WebP): <span class="picture-message"></span></label>
+                      <input name="file" type="file" accept="image/png, image/jpeg, image/webp" />
+                    </div>
+
+                    <div class="field url hidden">
+                      <label for="picture">URL:</label>
+                      <input name="picture" value="" type="url" class="input" />
+                    </div>
+                  </div>
+
+                  <button type="submit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M129.9 292.5C143.2 199.5 223.3 128 320 128C373 128 421 149.5 455.8 184.2C456 184.4 456.2 184.6 456.4 184.8L464 192L416.1 192C398.4 192 384.1 206.3 384.1 224C384.1 241.7 398.4 256 416.1 256L544.1 256C561.8 256 576.1 241.7 576.1 224L576.1 96C576.1 78.3 561.8 64 544.1 64C526.4 64 512.1 78.3 512.1 96L512.1 149.4L500.8 138.7C454.5 92.6 390.5 64 320 64C191 64 84.3 159.4 66.6 283.5C64.1 301 76.2 317.2 93.7 319.7C111.2 322.2 127.4 310 129.9 292.6zM573.4 356.5C575.9 339 563.7 322.8 546.3 320.3C528.9 317.8 512.6 330 510.1 347.4C496.8 440.4 416.7 511.9 320 511.9C267 511.9 219 490.4 184.2 455.7C184 455.5 183.8 455.3 183.6 455.1L176 447.9L223.9 447.9C241.6 447.9 255.9 433.6 255.9 415.9C255.9 398.2 241.6 383.9 223.9 383.9L96 384C87.5 384 79.3 387.4 73.3 393.5C67.3 399.6 63.9 407.7 64 416.3L65 543.3C65.1 561 79.6 575.2 97.3 575C115 574.8 129.2 560.4 129 542.7L128.6 491.2L139.3 501.3C185.6 547.4 249.5 576 320 576C449 576 555.7 480.6 573.4 356.5z"/></svg> Update</button>
+                </form>
+              </div>
+            </div>
+
+            <div>
+              <h2>Keys</h2>
+              <div id="keys">
+                <form>
+                  <div class="field">
+                    <label for="privkey">Private Key:</label>
+                    <input name="privkey" type="text" class="input" />
+                  </div>
+
+                  <div class="field">
+                    <label for="pubkey">Public Key:</label>
+                    <input name="pubkey" type="text" class="input" />
+                  </div>
+
+                  <div class="field">
+                    <label for="npub">npub:</label>
+                    <input name="npub" type="text" class="input" />
+                  </div>
+                  <div class="edit-container">
+                    <button type="button" class="edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L368 46.1 465.9 144 490.3 119.6c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L432 177.9 334.1 80 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z"/></svg> Edit</button>
+                  </div>
+                  <div class="submit-container">
+                    <button type="button" class="update"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M129.9 292.5C143.2 199.5 223.3 128 320 128C373 128 421 149.5 455.8 184.2C456 184.4 456.2 184.6 456.4 184.8L464 192L416.1 192C398.4 192 384.1 206.3 384.1 224C384.1 241.7 398.4 256 416.1 256L544.1 256C561.8 256 576.1 241.7 576.1 224L576.1 96C576.1 78.3 561.8 64 544.1 64C526.4 64 512.1 78.3 512.1 96L512.1 149.4L500.8 138.7C454.5 92.6 390.5 64 320 64C191 64 84.3 159.4 66.6 283.5C64.1 301 76.2 317.2 93.7 319.7C111.2 322.2 127.4 310 129.9 292.6zM573.4 356.5C575.9 339 563.7 322.8 546.3 320.3C528.9 317.8 512.6 330 510.1 347.4C496.8 440.4 416.7 511.9 320 511.9C267 511.9 219 490.4 184.2 455.7C184 455.5 183.8 455.3 183.6 455.1L176 447.9L223.9 447.9C241.6 447.9 255.9 433.6 255.9 415.9C255.9 398.2 241.6 383.9 223.9 383.9L96 384C87.5 384 79.3 387.4 73.3 393.5C67.3 399.6 63.9 407.7 64 416.3L65 543.3C65.1 561 79.6 575.2 97.3 575C115 574.8 129.2 560.4 129 542.7L128.6 491.2L139.3 501.3C185.6 547.4 249.5 576 320 576C449 576 555.7 480.6 573.4 356.5z"/></svg> Update</button>
+                    <button type="button" class="cancel"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg> Cancel</button>
+                  </div>
+                </form>
+              </div>
+
+              <h2>Relays</h2>
+              <div id="relays">
+                <form>
+                  <p><em class="message"></em></p>
+                  <div class="relays"></div>
+                </form>
+              </div>
+            </div>
+
+          </main>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal micromodal-slide" id="modal-profile" aria-hidden="true">
+      <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+        <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-profile-title">
+          <header class="modal__header">
+            <div></div>
+            <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+          </header>
+          <main class="modal__content" id="modal-profile-content">
+            <div class="banner">
+              <div class="avatar">
+                <img src="" />
+              </div>
+            </div>
+            <h1 class="modal__title" id="modal-profile-title"></h1>
+            <p class="pubkey"></p>
+            <div class="profile">
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+
+    <script src="popperjs-core.js"></script>
+    <script src="tippy.js"></script>
+    <script src="micromodal.min.js"></script>
+    <script src="emoji-mart.js"></script>
+    <script src="nostr.bundle.js"></script>
+    <script src="sql-wasm.js"></script>
+    <script src="hashicon.umd.js"></script>
+    <script src="linkify.js"></script>
+    <script src="base64.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
