@@ -10,7 +10,7 @@
   },
   "background": {
     "service_worker": "service-worker.js",
-    "scripts": ["service-worker.js"]
+    "scripts": ["nostr.bundle.js", "sql-wasm.js", "service-worker.js"]
   },
   "content_security_policy": {
     "extension_pages": "worker-src 'self'; script-src 'self' 'wasm-unsafe-eval'"
@@ -21,7 +21,7 @@
        "run_at": "document_idle",
        "all_frames": true,
        "css": ["default.css"],
-       "js": ["content-script.js"]
+       "js": ["popperjs-core.js", "tippy.js", "micromodal.min.js", "emoji-mart.js", "nostr.bundle.js", "sql-wasm.js", "hashicon.umd.js", "linkify.js", "base64.js", "youtube.js", "content-script.js"]
     }
   ],
   "permissions": [
