@@ -87,3 +87,8 @@ waitForEl("#movie_player").then(() => {
 
   var updateUIInterval = window.setInterval(function(){updateUI(document.querySelector('#popup-video'))}, 100);
 });
+
+
+browser.runtime.sendMessage({ action: "hi" }, response => {
+  console.log(response);
+});
