@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Popup Video",
+  "name": "PopUp Video",
   "version": "1.0",
 
   "description": "Chat about any website",
@@ -20,22 +20,12 @@
        "matches": ["https://*.youtube.com/*"],
        "run_at": "document_idle",
        "all_frames": true,
-       "css": ["default.css"],
+       "css": ["default.css", "micromodal.css"],
        "js": ["popperjs-core.js", "tippy.js", "micromodal.min.js", "emoji-mart.js", "nostr.bundle.js", "sql-wasm.js", "hashicon.umd.js", "linkify.js", "base64.js", "youtube.js", "content-script.js"]
     }
   ],
   "permissions": [
     "webRequest",
     "unlimitedStorage"
-  ],
-  "action": {
-    "default_popup": "index.html",
-    "default_title": "Click to open chat",
-    "default_icon": {
-      "16": "icons/logo-16.png",
-      "32": "icons/logo-32.png",
-      "64": "icons/logo-64.png",
-      "128": "icons/logo-128.png"
-    }
-  }
+  ]
 }
