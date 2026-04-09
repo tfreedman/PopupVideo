@@ -33,25 +33,6 @@ config = {
   locateFile: filename => `${filename}`
 }
 
-var showEmoji = false;
-function toggleEmojiWindow(event) {
-  if (showEmoji) {
-    document.querySelector('#emoji-picker').style.visibility = 'hidden';
-  } else {
-    document.querySelector('#emoji-picker').style.visibility = 'visible';
-  }
-
-  showEmoji = !showEmoji;
-}
-
-document.querySelector('body').addEventListener("click", event => {
-  // Get parent element and check if click happened outside parent only
-  const parent = document.querySelector("#emoji-picker");
-  if (showEmoji && !parent.contains(event.target)) {
-    toggleEmojiWindow(event);
-  }
-});
-
 function getRelays() {
   var default_relays = ["wss://relay.toastr.net", "wss://purplepag.es", "wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net"];
   var relays = [];
@@ -1003,59 +984,7 @@ initSqlJs(config).then(function(SQL){
   window.localStorage.setItem("settings", JSON.stringify(0));
   window.db = db;
 
-  if (typeof chrome !== "undefined" && typeof chrome.tabs !== "undefined") {
-    // Chrome Extension
-    window.browserExtension = true;
-
-    document.querySelector('body').classList.add('extension');
-
-    chrome.tabs.onActivated.addListener( function(activeInfo){
-      chrome.tabs.get(activeInfo.tabId, function(tab){
-        setExtensionURL(tab.url);
-      });
-    });
-
-    chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
-      if (tab.active && change.url) {
-        setExtensionURL(change.url);
-      }
-    });
-
-    chrome.tabs.query({
-      active: true,
-      currentWindow: true
-    }, function(tabs) {
-      setExtensionURL(tabs[0].url);
-    });
-  }
-
-
-  if (typeof browser !== "undefined" && typeof browser.tabs !== "undefined") {
-    // Firefox Extension
-    window.browserExtension = true;
-
-    browser.tabs.onActivated.addListener( function(activeInfo){
-      browser.tabs.get(activeInfo.tabId, function(tab){
-        setExtensionIcon(tab, tab.url);
-      });
-    });
-
-    browser.tabs.onUpdated.addListener((tabId, change, tab) => {
-      if (tab.active && change.url) {
-        setExtensionIcon(tab, change.url);
-      }
-    });
-
-    browser.tabs.query({
-      active: true,
-      currentWindow: true
-    }, function(tabs) {
-      setExtensionURL(tabs[0].url);
-    });
-  } else {
-    // Not a browser extension
-    window.browserExtension = false;
-  }
+  window.browserExtension = true;
 
   console.log("Cached Notes: " + db.exec("SELECT COUNT(*) FROM notes")[0].values[0][0]);
   console.log("Cached Toasts: " + db.exec("SELECT COUNT(*) FROM toasts WHERE kind = 1")[0].values[0][0]);
