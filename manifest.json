@@ -2,9 +2,7 @@
   "manifest_version": 3,
   "name": "PopUp Video",
   "version": "1.0",
-
   "description": "Chat about any website",
-
   "icons": {
     "48": "icons/logo-48.png"
   },
@@ -27,5 +25,11 @@
   "permissions": [
     "webRequest",
     "unlimitedStorage"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["fonts/*"],
+      "matches": ["<all_urls>"]
+    }
   ]
 }
