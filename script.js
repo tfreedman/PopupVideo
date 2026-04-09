@@ -33,46 +33,6 @@ config = {
   locateFile: filename => `${filename}`
 }
 
-function getRelays() {
-  var default_relays = ["wss://relay.toastr.net", "wss://purplepag.es", "wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net"];
-  var relays = [];
-  var override_relays = true;
-
-  if (override_relays) {
-    var relays = ["wss://toastr.tylerfreedman.com", "wss://purplepag.es"];
-    document.querySelector('#modal-account #relays .message').innerHTML = 'Overriding NIP-07 Relays for debugging purposes';
-  } else {
-    if (typeof window.nostr !== 'undefined') {
-      // Detected NIP-07 support
-      document.querySelector('#modal-account #relays .message').innerHTML = 'Retrieving relays via NIP-07';
-      window.nostr.getRelays().then(r => {
-        for (const [key, value] of Object.entries(r)) {
-          relays.push(key);
-        }
-        displayRelays(relays);
-      })
-    } else {
-      relays = relays.concat(default_relays);
-    }
-  }
-  displayRelays(relays);
-  return relays;
-}
-
-function displayRelays(relays) {
-  const div = document.createElement('div');
-  relays.forEach((relay) => {
-    div.innerHTML += `
-      <div class="field">
-        <label for="relay[]">Relay</label>
-        <input class="input relay" name="relay[]" disabled value="${relay}" type="text" />
-      </div>
-    `
-  });
-
-  document.querySelector('#modal-account .relays').innerHTML = div.innerHTML;
-}
-
 function editKeys() {
   updateProfile(); // dunno why this was here originally, but let's not break it for now
   document.querySelector('#keys .edit-container').style.display = 'none'
@@ -2109,12 +2069,6 @@ function randomBytes(bytesLength = 32) {
     return crypto.getRandomValues(new Uint8Array(bytesLength));
   }
   throw new Error("crypto.getRandomValues must be defined");
-}
-
-function modalInitialization() {
-  MicroModal.init({
-    awaitCloseAnimation: true
-  });
 }
 
 function updateProfileModal(event, pubKey) {

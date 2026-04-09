@@ -150,6 +150,35 @@ function toggleEmojiWindow(event) {
   showEmoji = !showEmoji;
 }
 
+function getRelays() {
+  var default_relays = ["wss://relay.toastr.net", "wss://purplepag.es", "wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net"];
+  var relays = [];
+  var override_relays = true;
+
+  if (override_relays) {
+    var relays = ["wss://toastr.tylerfreedman.com", "wss://purplepag.es"];
+    document.querySelector('#modal-account #relays .message').innerHTML = 'Overriding NIP-07 Relays for debugging purposes';
+  } else {
+    relays = relays.concat(default_relays);
+  }
+  displayRelays(relays);
+  return relays;
+}
+
+function displayRelays(relays) {
+  const div = document.createElement('div');
+  relays.forEach((relay) => {
+    div.innerHTML += `
+      <div class="field">
+        <label for="relay[]">Relay</label>
+        <input class="input relay" name="relay[]" disabled value="${relay}" type="text" />
+      </div>
+    `
+  });
+
+  document.querySelector('#modal-account .relays').innerHTML = div.innerHTML;
+}
+
 waitForEl("#movie_player").then(() => {
   document.querySelector('body').addEventListener("click", event => {
     // Get parent element and check if click happened outside parent only
@@ -167,6 +196,8 @@ waitForEl("#movie_player").then(() => {
 
 
   createAccountPopUp();
+  window.relays = getRelays();
+
 
   var account = document.createElement("a");
   account.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M463 448.2C440.9 409.8 399.4 384 352 384L288 384C240.6 384 199.1 409.8 177 448.2C212.2 487.4 263.2 512 320 512C376.8 512 427.8 487.3 463 448.2zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM320 336C359.8 336 392 303.8 392 264C392 224.2 359.8 192 320 192C280.2 192 248 224.2 248 264C248 303.8 280.2 336 320 336z"/></svg> Account</span>';
