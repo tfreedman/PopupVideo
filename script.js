@@ -593,7 +593,7 @@ function uploadNote(data, note, parent) {
     } else if (window.mode == "PopUpVideo") {
       if (note["kind"] == 40) {
         note["tags"].forEach((tag) => {
-          if (tag[0] == "t" && (tag[1].toLowerCase().startsWith('trollbox') || tag[1].toLowerCase().startsWith('popupvideo'))) {
+          if (tag[0] == "t" && tag[1].toLowerCase().startsWith('popupvideo')) {
             isToast = true;
           }
         });
@@ -1254,7 +1254,7 @@ initSqlJs(config).then(function(SQL){
     filter = {kinds: [kind], '#t': ["toastr"], since: 1750046400};
   } else if (window.mode == "PopUpVideo") {
     kind = 40;
-    filter = {kinds: [kind], '#t': ["trollbox", "popupvideo"], since: 1750046400}
+    filter = {kinds: [kind], '#t': ["popupvideo"], since: 1750046400}
   }
 
   var h = window.pool.subscribeMany(
