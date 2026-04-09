@@ -64,7 +64,7 @@ function syncDatabase() {
 
 function exportSettings() {
   var settings = new Object();
-  if (window.mode == "YakClub") {
+  if (window.mode == "PopUpVideo") {
     // This currently only exports favourites and alerts
 
     // Favourites
@@ -121,7 +121,7 @@ function importSettings(note) {
   console.log('attempting to import settings: ');
   console.log(settings);
 
-  if (window.mode == "YakClub") {
+  if (window.mode == "PopUpVideo") {
     // This currently only imports favourites and alerts
 
     // Favourites
@@ -495,9 +495,7 @@ function validateToast(event, depth) {
     var data = event.target.parentElement.parentElement;
   }
 
-  if (window.mode == "Toastr") {
-    //Do nothing
-  } else if (window.mode == "PopUpVideo") {
+  if (window.mode == "PopUpVideo") {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       if (data.checkValidity()) {
@@ -584,13 +582,7 @@ function uploadNote(data, note, parent) {
     // We'd also have to update the number of messages, etc. Or, we can cheat and just re-render everything.
 
     var isToast = false;
-    if (window.mode == "Toastr") {
-      note["tags"].forEach((tag) => {
-        if (tag[0] == "t" && tag[1].toLowerCase().startsWith('toastr')) {
-          isToast = true;
-        }
-      });
-    } else if (window.mode == "PopUpVideo") {
+    if (window.mode == "PopUpVideo") {
       if (note["kind"] == 40) {
         note["tags"].forEach((tag) => {
           if (tag[0] == "t" && tag[1].toLowerCase().startsWith('popupvideo')) {
@@ -608,9 +600,7 @@ function uploadNote(data, note, parent) {
       window.importNote(note, window.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
     }
 
-    if (window.mode == "Toastr") {
-      searchResults(document.getElementById('search-bar').value);
-    } else if (window.mode == "PopUpVideo") {
+    if (window.mode == "PopUpVideo") {
       searchResults(document.getElementById('search-bar').value);
       if (!isToast && note["kind"] != 30078)  {
         document.querySelector('#container').scrollTo({left: 0, top: document.querySelector('#container').scrollHeight, behavior: "smooth"});
@@ -877,9 +867,7 @@ function displayToast(parent, data, note, params) {
   });
 
   reply.onclick = function() {
-    if (window.mode == "Toastr") {
-      var form = this.parentElement.parentElement.parentElement.nextSibling.querySelector('& > .toast-new');
-    } else if (window.mode == "PopUpVideo") {
+    if (window.mode == "PopUpVideo") {
       var form = document.querySelector('#footer .toast-new-form');
       form.querySelector('.reply-details .heading').innerHTML = 'Replying to:';
 
@@ -960,10 +948,7 @@ initSqlJs(config).then(function(SQL){
       }
     });
 
-    if (window.mode == "Toastr") {
-      const url = new URL(taggedUrl);
-      var domain = url.hostname.toLowerCase();
-    } else if (window.mode == "PopUpVideo") {
+    if (window.mode == "PopUpVideo") {
       // just use the room name as the raw value
       var url = rValue // is this actually used anywhere?;
       var domain = JSON.parse(value["content"])["name"].toLowerCase();
@@ -1249,11 +1234,8 @@ initSqlJs(config).then(function(SQL){
 
   var filter;
   var kind;
-  if (window.mode == "Toastr") {
+  if (window.mode == "PopUpVideo") {
     kind = 1;
-    filter = {kinds: [kind], '#t': ["toastr"], since: 1750046400};
-  } else if (window.mode == "PopUpVideo") {
-    kind = 40;
     filter = {kinds: [kind], '#t': ["popupvideo"], since: 1750046400}
   }
 
@@ -1285,11 +1267,7 @@ initSqlJs(config).then(function(SQL){
     var filters = [];
     var kind;
 
-    if (window.mode == "Toastr") {
-      var stmt = window.db.prepare("SELECT * FROM toasts WHERE kind = 1");
-      kind = 1; // children of toasts are also kind 1
-      var obj = window;
-    } else if (window.mode == "PopUpVideo") {
+    if (window.mode == "PopUpVideo") {
       var stmt = window.db.prepare("SELECT * FROM toasts WHERE kind = 40");
       kind = 42; // children of channel messages are actually kind 42
       var obj = document.querySelector('#yak');
@@ -1297,9 +1275,7 @@ initSqlJs(config).then(function(SQL){
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);
-      if (window.mode == "Toastr") {
-        filters.push({kinds: [1], '#e': [event.id]});
-      } else if (window.mode == "PopUpVideo") {
+      if (window.mode == "PopUpVideo") {
         filters.push({kinds: [42], '#e': [event.id]});
       }
     }
@@ -1343,9 +1319,7 @@ initSqlJs(config).then(function(SQL){
                   }
                   searchResults(document.getElementById('search-bar').value);
                   if (shouldScroll) {
-                    if (window.mode == "Toastr") {
-                      obj.scrollTo({left: 0, top: obj.scrollHeight, behavior: "smooth"});
-                    } else if (window.mode == "PopUpVideo") {
+                    if (window.mode == "PopUpVideo") {
                       document.querySelector('#container').scrollTo({left: 0, top: document.querySelector('#container').scrollHeight});
                     }
                   }
@@ -1366,16 +1340,13 @@ initSqlJs(config).then(function(SQL){
   }
 
   const searchBar = document.getElementById('search-bar');
-  searchBar.value = 'note1ggqp6z236003r40m253j27xy8ptzal0c83lxte8m82unt6ln38qqreegpr'; // open directly into yak.club
   window.searchResults = (searchValue) => {
     var mode = '';
     if (!searchValue || searchValue == "" || searchValue == "https://" || searchValue == "http://") {
       mode = 'recent';
     } else if ((searchValue.startsWith('https://') || searchValue.startsWith('http://')) && (searchValue.split("/").length - 1) > 2) {
-      if (window.mode == "Toastr") {
-        mode = 'url-' + searchValue;
-      } else if (window.mode == "PopUpVideo") {
-        // Yak Club only supports one chat room per domain, so URL-mode isn't a thing
+      if (window.mode == "PopUpVideo") {
+        // Pop Up Video only supports one chat room per domain, so URL-mode isn't a thing
         if (searchValue.startsWith('https://')) {
           searchValue = searchValue.substring(8, searchValue.length);
         } else if (searchValue.startsWith('http://')) {
@@ -1494,9 +1465,7 @@ initSqlJs(config).then(function(SQL){
     var dirty = false;
 
     // Get the public keys of everyone who's written a toast
-    if (window.mode == "Toastr") {
-      var stmt = db.prepare("SELECT * FROM toasts WHERE kind = 1");
-    } else if (window.mode == "PopUpVideo") {
+    if (window.mode == "PopUpVideo") {
       var stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40");
     }
 
@@ -1507,9 +1476,7 @@ initSqlJs(config).then(function(SQL){
     }
 
     // Get the public keys of everyone who's written a note
-    if (window.mode == "Toastr") {
-      var stmt = db.prepare("SELECT * FROM notes WHERE kind = 1");
-    } else if (window.mode == "PopUpVideo") {
+    if (window.mode == "PopUpVideo") {
       var stmt = db.prepare("SELECT * FROM notes WHERE kind = 42");
     }
     while(stmt.step()) {
@@ -1637,12 +1604,7 @@ initSqlJs(config).then(function(SQL){
     if (mode.startsWith("domain-")) {
       console.log("Filtering to domain name " + mode.substring(7));
 
-      if (window.mode == "Toastr") {
-        stmt = db.prepare("SELECT * FROM toasts WHERE kind = 1 AND domain = $domain ORDER BY created_at DESC");
-        emptyMsg = "Sorry, there are no toasts for the domain " + mode.substring(7);
-        pageTitle = 'Search Results'
-        pageSubTitle = 'Domain: ' + mode.substring(7);
-      } else if (window.mode == "PopUpVideo") {
+      if (window.mode == "PopUpVideo") {
         stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND domain LIKE $domain ORDER BY created_at DESC");
         emptyMsg = "Sorry, there are no channels named " + mode.substring(7);
         var closeMatchMsg = "Not what you're looking for?";
@@ -1657,12 +1619,7 @@ initSqlJs(config).then(function(SQL){
       shouldShowMessages = false;
 
     } else if (mode == "recent") {
-      if (window.mode == "Toastr") {
-        stmt = db.prepare("SELECT * FROM toasts WHERE kind = 1 ORDER BY created_at DESC");
-        emptyMsg = "Sorry, there are no recent toasts";
-        pageTitle = 'Recent Toasts'
-        pageSubTitle = '';
-      } else if (window.mode == "PopUpVideo") {
+      if (window.mode == "PopUpVideo") {
         stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 ORDER BY created_at DESC");
         emptyMsg = "Sorry, there are no channels";
         pageTitle = 'Channels'
@@ -1693,9 +1650,7 @@ initSqlJs(config).then(function(SQL){
       pageTitle = 'Search Results'
       pageSubTitle = 'URL: ' + mode.substring(4);
     } else if (mode.startsWith("profile")) {
-      if (window.mode == "Toastr") {
-        stmt = db.prepare("SELECT * FROM toasts WHERE kind = 1 AND pubkey = $pubkey ORDER BY created_at DESC");
-      } else if (window.mode == "PopUpVideo") {
+      if (window.mode == "PopUpVideo") {
         stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND pubkey = $pubkey ORDER BY created_at DESC");
       }
       console.log("Filtering to profile " + mode.substring(8));
@@ -1714,19 +1669,14 @@ initSqlJs(config).then(function(SQL){
         username = 'Unknown';
       }
 
-      if (window.mode == "Toastr") {
-        emptyMsg = "Sorry, there are no toasts from profile " + mode.substring(8) + ' (' + pubkey + ')';
-        pageTitle = 'Toasts from ' + username;
-      } else if (window.mode == "PopUpVideo") {
+      if (window.mode == "PopUpVideo") {
         emptyMsg = "Sorry, there are no channels from profile " + mode.substring(8) + ' (' + pubkey + ')';
         pageTitle = 'Channels from ' + username;
       }
 
       pageSubTitle = mode.substring(8);
     } else if (mode.startsWith("toast")) {
-      if (window.mode == "Toastr") {
-        stmt = db.prepare("SELECT * FROM toasts WHERE kind = 1 AND id = $id ORDER BY created_at DESC");
-      } else if (window.mode == "PopUpVideo") {
+      if (window.mode == "PopUpVideo") {
         stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND id = $id ORDER BY created_at DESC");
       }
 
@@ -1747,10 +1697,7 @@ initSqlJs(config).then(function(SQL){
 
       var row;
 
-      if (window.mode == "Toastr") {
-        pageTitle = 'Viewing Thread';
-        emptyMsg = "Sorry, there are no toasts corresponding to " + mode.substring(6) + ' (' + id + ')';
-      } else if (window.mode == "PopUpVideo") {
+      if (window.mode == "PopUpVideo") {
         var channelName = 'Unknown';
         while (stmt.step()) {
           row = stmt.getAsObject();
@@ -1827,9 +1774,7 @@ initSqlJs(config).then(function(SQL){
       // This is only doable with an index of tags though.
       // {kinds: [1], '#e': [mode.substring(8), "", "root/reply"]}
 
-      if (window.mode == "Toastr") {
-        stmt = db.prepare("SELECT * FROM notes WHERE kind = 1 AND id <> $id AND note LIKE $noteid ORDER BY created_at ASC");
-      } else if (window.mode == "PopUpVideo") {
+      if (window.mode == "PopUpVideo") {
         stmt = db.prepare("SELECT * FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid ORDER BY created_at ASC");
       }
       stmt.bind({$id: mode.substring(8), $noteid: '%' + mode.substring(8) + '%'});
@@ -1925,10 +1870,7 @@ initSqlJs(config).then(function(SQL){
       if (shouldShowHeadings) {
         var article = document.createElement('div');
 
-        if (window.mode == "Toastr") {
-          var ccStmt = db.prepare("SELECT COUNT(*) FROM notes WHERE kind = 1 AND id <> $id AND note LIKE $noteid");
-          article.classList.add('toast');
-        } else if (window.mode == "PopUpVideo") {
+        if (window.mode == "PopUpVideo") {
           var ccStmt = db.prepare("SELECT COUNT(*) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid");
           var pStmt = db.prepare("SELECT COUNT(DISTINCT pubkey) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid");
           pStmt.bind({$id: event.id, $noteid: '%' + event.id + '%'});
@@ -1974,13 +1916,7 @@ initSqlJs(config).then(function(SQL){
         if (ccStmt.step()) {var messagesCount = ccStmt.getAsObject()["COUNT(*)"]}
         var messagesString = '';
 
-        if (window.mode == "Toastr") {
-          if (messagesCount != 1) {
-            messagesString = 'comments';
-          } else {
-            messagesString = 'comment';
-          }
-        } else if (window.mode == "PopUpVideo") {
+        if (window.mode == "PopUpVideo") {
           if (messagesCount != 1) {
             messagesString = 'messages';
           } else {
@@ -2008,11 +1944,7 @@ initSqlJs(config).then(function(SQL){
         var epochTimestamp = new Date(0);
         epochTimestamp.setUTCSeconds(event.created_at);
 
-        if (window.mode == "Toastr") {
-          var innerHTML = `<h2><a href="${row.url}">${event.content}</a></h2>
-          <p><a class="messages"></a> &middot; ${epochTimestamp.toLocaleString()} <span class="middot">&middot;</span><br /> <a class="domain"></a> &middot; submitted by <a class="submitter"></a> </p>
-          `
-        } else if (window.mode == "PopUpVideo") {
+        if (window.mode == "PopUpVideo") {
           var roomName = 'Unknown';
 
           try {
@@ -2130,9 +2062,7 @@ initSqlJs(config).then(function(SQL){
         console.log('mode:' + container.querySelector('.toasts').children.length);
 
         var classFilter = '';
-        if (window.mode == "Toastr") {
-          classFilter = '.toast';
-        } else if (window.mode == "PopUpVideo") {
+        if (window.mode == "PopUpVideo") {
           classFilter = '.note';
         }
 
@@ -2146,7 +2076,7 @@ initSqlJs(config).then(function(SQL){
 
     if (pageTitle !== undefined) {
       document.querySelector('h1#title').innerHTML = pageTitle;
-      document.title = 'Yak Club - ' + pageTitle;
+      document.title = 'PopUp Video - ' + pageTitle;
 
       if (pageSubTitle !== undefined) {
         document.querySelector('h2#subtitle').innerHTML = pageSubTitle;
@@ -2203,10 +2133,7 @@ initSqlJs(config).then(function(SQL){
 
         // Add a button to the empty message that opens the newToast UI
         if (mode.startsWith('url-') || (window.mode == "PopUpVideo" && mode.startsWith('domain-'))) {
-          if (window.mode == "Toastr") {
-            var newItem = '<button class=\'valid\'>' + actionMsg + '</button>';
-            document.querySelector('#newToastContainer input[name="url"]').value = mode.substring(4);
-          } else if (window.mode == "PopUpVideo") {
+          if (window.mode == "PopUpVideo") {
             var newItem = `<form class="toast-new-form" autocomplete="off" action="">
               <input type="hidden" name="url" value="${mode.substring(7)}" placeholder="Room or domain name" required="">
               <button type="submit" class="toast-submit-button">${actionMsg}</button>
@@ -2220,11 +2147,6 @@ initSqlJs(config).then(function(SQL){
 
           var emptyInput = container.querySelector('.toasts-empty input')
           emptyInput.addEventListener('keydown', (e) => validateToast(e, 1));
-
-          if (window.mode == "Toastr") {
-            var emptyButton = container.querySelector('.toasts-empty button')
-            emptyButton.addEventListener('click', (e) => document.querySelectorAll("#topbar nav .right > a.tab")[0].click());
-          }
         }
 
         container.querySelector('.toasts-empty').classList.add("active");
@@ -2255,9 +2177,7 @@ initSqlJs(config).then(function(SQL){
     }
 
     var submitText;
-    if (window.mode == "Toastr") {
-      submitText = "Toast";
-    } else if (window.mode == "PopUpVideo") {
+    if (window.mode == "PopUpVideo") {
       submitText = "Create";
     }
 
