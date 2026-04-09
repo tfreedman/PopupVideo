@@ -4,6 +4,10 @@ function createAccountPopUp() {
   div.classList.add('micromodal-slide');
   div.id = "modal-account";
   div.ariaHidden = "true";
+
+ var avatarURL = browser.runtime.getURL("icons/circle-user.svg"); // Firefox
+//  var avatarURL = chrome.extension.getURL("icons/circle-user.svg"); // Chrome
+
   div.innerHTML = `
     <div class="modal__overlay" tabindex="-1" data-micromodal-close>
       <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-account-title">
@@ -18,7 +22,7 @@ function createAccountPopUp() {
             <h2>Profile</h2>
             <div id="profile">
               <form>
-                <img class="avatar" src="circle-user.svg" />
+                <img class="avatar" src="${avatarURL}" />
 
                 <div class="field">
                   <label for="name">Name:</label>
@@ -119,6 +123,7 @@ function createAccountPopUp() {
       </div>
     </div>
   </div>`;
+
   document.querySelector('body').appendChild(div);
 }
 
