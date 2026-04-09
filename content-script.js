@@ -157,7 +157,7 @@ function getRelays() {
 
   if (override_relays) {
     var relays = ["wss://toastr.tylerfreedman.com", "wss://purplepag.es"];
-    document.querySelector('#modal-account #relays .message').innerHTML = 'Overriding NIP-07 Relays for debugging purposes';
+    document.querySelector('#modal-account #relays .message').innerHTML = 'Overriding relays for debugging purposes';
   } else {
     relays = relays.concat(default_relays);
   }

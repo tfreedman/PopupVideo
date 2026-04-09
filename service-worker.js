@@ -40,24 +40,13 @@ function exportSettings() {
   }
 
   console.log(JSON.stringify(settings));
-  if (typeof window.nostr !== 'undefined') {
-    // NIP07 supported
-    window.nostr.nip44.encrypt(window.pubKey, JSON.stringify(settings)).then(ciphertext => {
-      var e = {created_at: Math.floor(Date.now() / 1000), kind: 30078, tags: [['d', window.mode]], content: ciphertext};
-      window.nostr.signEvent(e).then(note => {
-        console.log("signed note via nip07: " + note);
-        uploadNote(null, note, null);
-      })
-    })
-  } else {
-    // NIP07 unsupported
-    var convoKey = window.NostrTools.nip44.getConversationKey(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data, window.pubKey);
-    var ciphertext = window.NostrTools.nip44.v2.encrypt(JSON.stringify(settings), convoKey, randomBytes(32));
-    var e = {created_at: Math.floor(Date.now() / 1000), kind: 30078, tags: [['d', window.mode]], content: ciphertext};
-    var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data))
-    console.log("signed note without nip07: " + note);
-    uploadNote(null, note, null);
-  }
+  // NIP07 unsupported
+  var convoKey = window.NostrTools.nip44.getConversationKey(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data, window.pubKey);
+  var ciphertext = window.NostrTools.nip44.v2.encrypt(JSON.stringify(settings), convoKey, randomBytes(32));
+  var e = {created_at: Math.floor(Date.now() / 1000), kind: 30078, tags: [['d', window.mode]], content: ciphertext};
+  var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data))
+  console.log("signed note without nip07: " + note);
+  uploadNote(null, note, null);
 }
 
 function importSettings(note) {
