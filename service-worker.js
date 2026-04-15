@@ -1,3 +1,16 @@
+self.mode = "PopUpVideo";
+var users = {};
+self.pool = null;
+self.version = 6;
+self.settings = 0;
+self.hasFinishedLoading = false;
+self.isConnected = false;
+self.db = null;
+
+var pubKey;
+var snd = new Audio("/pop.mp3");
+self.lastDrawMode = null;
+
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "hi") {
     sendResponse({ message: "hello!" });
@@ -9,19 +22,19 @@ config = {
 }
 
 function syncDatabase() {
-  var dbstr = toBinString(window.db.export());
-  storage.local.set(window.mode + ".sqlite", dbstr);
+  var dbstr = toBinString(self.db.export());
+  storage.local.set(self.mode + ".sqlite", dbstr);
 }
 
 function exportSettings() {
   var settings = new Object();
-  if (window.mode == "PopUpVideo") {
+  if (self.mode == "PopUpVideo") {
     // This currently only exports favourites and alerts
 
     // Favourites
 
     settings["toasts"] = [];
-    var stmt = window.db.prepare("SELECT * FROM toasts");
+    var stmt = self.db.prepare("SELECT * FROM toasts");
 
     while(stmt.step()) {
       const row = stmt.getAsObject();
@@ -33,7 +46,7 @@ function exportSettings() {
     // Alerts
 
     settings["alerts"] = [];
-    var stmt = window.db.prepare("SELECT * FROM alerts");
+    var stmt = self.db.prepare("SELECT * FROM alerts");
 
     while(stmt.step()) {
       const row = stmt.getAsObject();
@@ -45,10 +58,10 @@ function exportSettings() {
 
   console.log(JSON.stringify(settings));
   // NIP07 unsupported
-  var convoKey = window.NostrTools.nip44.getConversationKey(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data, window.pubKey);
-  var ciphertext = window.NostrTools.nip44.v2.encrypt(JSON.stringify(settings), convoKey, randomBytes(32));
-  var e = {created_at: Math.floor(Date.now() / 1000), kind: 30078, tags: [['d', window.mode]], content: ciphertext};
-  var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data))
+  var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(localStorage.getItem('privkey')).data, self.pubKey);
+  var ciphertext = self.NostrTools.nip44.v2.encrypt(JSON.stringify(settings), convoKey, randomBytes(32));
+  var e = {created_at: Math.floor(Date.now() / 1000), kind: 30078, tags: [['d', self.mode]], content: ciphertext};
+  var note = self.NostrTools.finalizeEvent(e, Uint8Array.from(self.NostrTools.nip19.decode(localStorage.getItem('privkey')).data))
   console.log("signed note without nip07: " + note);
   uploadNote(null, note, null);
 }
@@ -61,19 +74,19 @@ function importSettings(note) {
   console.log('attempting to import settings: ');
   console.log(settings);
 
-  if (window.mode == "PopUpVideo") {
+  if (self.mode == "PopUpVideo") {
     // This currently only imports favourites and alerts
 
     // Favourites
     Object.keys(settings["toasts"]).forEach(key => {
       var toast = settings["toasts"][key];
-      var stmt = window.db.prepare("SELECT * FROM toasts WHERE id = $id");
+      var stmt = self.db.prepare("SELECT * FROM toasts WHERE id = $id");
       stmt.bind({$id: toast.id});
       var result = null;
       while(stmt.step()) {
         result = toast.id;
         console.log('setting favourite on toast ' + toast.id);
-        window.db.run("UPDATE toasts SET favourite = ? WHERE id = ?", [toast.favourite, toast.id]);
+        self.db.run("UPDATE toasts SET favourite = ? WHERE id = ?", [toast.favourite, toast.id]);
       }
       if (result === null) {
         console.log('No match for ' + toast.id + ' in toasts table');
@@ -83,13 +96,13 @@ function importSettings(note) {
     // Alerts
     Object.keys(settings["alerts"]).forEach(key => {
       var note = settings["alerts"][key];
-      var stmt = window.db.prepare("SELECT * FROM alerts WHERE id = $id");
+      var stmt = db.prepare("SELECT * FROM alerts WHERE id = $id");
       stmt.bind({$id: note.id});
       var result = null;
       while(stmt.step()) {
         result = note.id;
         console.log('setting read on alert ' + note.id);
-        window.db.run("UPDATE alerts SET read = ? WHERE id = ?", [note.read, note.id]);
+        db.run("UPDATE alerts SET read = ? WHERE id = ?", [note.read, note.id]);
       }
       if (result === null) {
         console.log('No match for ' + note.id + ' in alerts table');
@@ -102,7 +115,7 @@ function importSettings(note) {
   // We don't want to re-import the settings we just exported, so we make sure the app thinks
   // the current settings are newer by adding 1 to the timestamp
   storage.local.set("settings", JSON.stringify(created_at + 1));
-  window.settings = note['created_at'] + 1;
+  self.settings = note['created_at'] + 1;
 
   syncDatabase();
 }
@@ -125,7 +138,7 @@ function toBinString(arr) {
 }
 
 initSqlJs(config).then(function(SQL){
-  window.importToast = function(value, immediateWrite) {
+  self.importToast = function(value, immediateWrite) {
     var note = JSON.stringify(value);
 
     var taggedUrl = '';
@@ -139,7 +152,7 @@ initSqlJs(config).then(function(SQL){
       }
     });
 
-    if (window.mode == "PopUpVideo") {
+    if (self.mode == "PopUpVideo") {
       // just use the room name as the raw value
       var url = rValue // is this actually used anywhere?;
       var domain = JSON.parse(value["content"])["name"].toLowerCase();
@@ -153,30 +166,30 @@ initSqlJs(config).then(function(SQL){
     }
   }
 
-  window.importNote = function(value, immediateWrite) {
+  self.importNote = function(value, immediateWrite) {
     var dirty = false;
     var note = JSON.stringify(value);
     if (value['kind'] == 0) {
       var existing_note = db.exec("SELECT created_at FROM notes WHERE pubkey = ? AND kind = 0", [value['pubkey']])
       if (existing_note.length == 0) {
         console.log('Inserting ' + value['id'] + ' into Notes DB...');
-        window.users[value['pubkey']] = value;
-        if (value['pubkey'] == window.pubKey) {
-          displayProfile(window.pubKey);
+        self.users[value['pubkey']] = value;
+        if (value['pubkey'] == self.pubKey) {
+          displayProfile(self.pubKey);
         }
         db.run("INSERT INTO notes (id, created_at, pubkey, kind, note) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], value['kind'], note]);
         dirty = true;
-        console.log('Adding ' + value['pubkey'] + ' to window.users...');
+        console.log('Adding ' + value['pubkey'] + ' to self.users...');
       } else {
         if (existing_note[0].values[0][0] < value['created_at']) {
           console.log('Updating ' + value['id'] + ' into Notes DB...');
-          window.users[value['pubkey']] = value;
-          if (value['pubkey'] == window.pubKey) {
-            displayProfile(window.pubKey);
+          self.users[value['pubkey']] = value;
+          if (value['pubkey'] == self.pubKey) {
+            displayProfile(self.pubKey);
           }
           db.exec("UPDATE notes SET id = ?, created_at = ?, kind = ?, note = ? WHERE pubkey = ? AND kind = 0", [value['id'], value['created_at'], value['kind'], note, value['pubkey']]);
           dirty = true;
-          console.log('Adding ' + value['pubkey'] + ' to window.users...');
+          console.log('Adding ' + value['pubkey'] + ' to self.users...');
         } else {
           console.log("Received an older kind 0 event than what's already in the database");
         }
@@ -209,7 +222,7 @@ initSqlJs(config).then(function(SQL){
           // if the e Tag refers to an event we wrote
           // AND we didn't write the event
           // AND it isn't a root e Tag, because we don't care about rooms we created
-          if (tag[4] && tag[4] == window.pubKey && value["pubkey"] != window.pubKey && tag[3] != "root") {
+          if (tag[4] && tag[4] == self.pubKey && value["pubkey"] != self.pubKey && tag[3] != "root") {
             shouldAlert = true;
           }
         }
@@ -218,7 +231,7 @@ initSqlJs(config).then(function(SQL){
         // AND we didn't write the event
 
         if (tag[0] == "p") {
-          if (tag[1] == window.pubKey && value["pubkey"] != window.pubKey) {
+          if (tag[1] == self.pubKey && value["pubkey"] != self.pubKey) {
             shouldAlert = true;
           }
         }
@@ -236,18 +249,18 @@ initSqlJs(config).then(function(SQL){
       db.run("UPDATE toasts SET created_at = MAX(created_at, ?) WHERE id = ?", [value['created_at'], parent]);
 
       // Mark a room as read if the message we just received came from us
-      if (value['pubkey'] == window.pubKey) {
+      if (value['pubkey'] == self.pubKey) {
         console.log('updating read indicator of ' + parent + ' to ' + value['created_at']);
         db.run("UPDATE toasts SET read_at = MAX(read_at, ?) WHERE id = ?", [value['created_at'], parent]);
       }
 
       dirty = true;
       console.log('Adding ' + value['id'] + ' to notes');
-    } else if (value['kind'] == 30078 && value["pubkey"] == window.pubKey) { // NIP-78 - arbitrary custom app data
+    } else if (value['kind'] == 30078 && value["pubkey"] == self.pubKey) { // NIP-78 - arbitrary custom app data
       var existing_timestamp = 0;
 
       var stmt = db.prepare("SELECT * FROM notes WHERE pubkey = $pubkey AND kind = 30078");
-      stmt.bind({$pubkey: window.pubKey});
+      stmt.bind({$pubkey: self.pubKey});
 
       while(stmt.step()) {
         const row = stmt.getAsObject();
@@ -256,7 +269,7 @@ initSqlJs(config).then(function(SQL){
 
       var okayToImport = false;
       value["tags"].forEach((tag) => {
-        if (tag[0] == "d" && tag[1] == window.mode) { // Only import settings from this specific application
+        if (tag[0] == "d" && tag[1] == self.mode) { // Only import settings from this specific application
           okayToImport = true;
         }
       });
@@ -280,8 +293,8 @@ initSqlJs(config).then(function(SQL){
 
             // Notes are encrypted using NIP-44. We need to first decrypt it, then parse it.
             // NIP07 unsupported
-            var convoKey = window.NostrTools.nip44.getConversationKey(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data, window.pubKey);
-            var plaintext = window.NostrTools.nip44.v2.decrypt(value['content'], convoKey);
+            var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(localStorage.getItem('privkey')).data, self.pubKey);
+            var plaintext = self.NostrTools.nip44.v2.decrypt(value['content'], convoKey);
             value['content'] = plaintext;
             importSettings(JSON.stringify(value));
           } else {
@@ -298,9 +311,9 @@ initSqlJs(config).then(function(SQL){
   }
 
   var dbVersion = storage.local.get("version");
-  var dbstr = storage.local.get(window.mode + ".sqlite");
+  var dbstr = storage.local.get(self.mode + ".sqlite");
 
-  if (dbstr && dbVersion !== null && dbVersion == window.version) {
+  if (dbstr && dbVersion !== null && dbVersion == self.version) {
     console.log("Loading existing database - version numbers match");
     var db = new SQL.Database(toBinArray(dbstr));
   } else {
@@ -313,12 +326,11 @@ initSqlJs(config).then(function(SQL){
   }
 
   var dbstr = toBinString(db.export());
-  storage.local.set(window.mode + ".sqlite", dbstr);
-  storage.local.set("version", window.version);
+  storage.local.set(self.mode + ".sqlite", dbstr);
+  storage.local.set("version", self.version);
   storage.local.set("settings", JSON.stringify(0));
-  window.db = db;
 
-  window.browserExtension = true;
+  self.browserExtension = true;
 
   console.log("Cached Notes: " + db.exec("SELECT COUNT(*) FROM notes")[0].values[0][0]);
   console.log("Cached Toasts: " + db.exec("SELECT COUNT(*) FROM toasts WHERE kind = 1")[0].values[0][0]);
@@ -328,23 +340,23 @@ initSqlJs(config).then(function(SQL){
   var pk;
 
   if (sk === null) {
-    document.querySelector('#keys input[name="privkey"]').value = window.NostrTools.nip19.nsecEncode(window.NostrTools.generateSecretKey());
+    document.querySelector('#keys input[name="privkey"]').value = self.NostrTools.nip19.nsecEncode(self.NostrTools.generateSecretKey());
     localStorage.setItem("privkey", document.querySelector('#keys input[name="privkey"]').value);
-    sk = Uint8Array.from(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data);
-    pk = window.NostrTools.getPublicKey(sk);
+    sk = Uint8Array.from(self.NostrTools.nip19.decode(localStorage.getItem('privkey')).data);
+    pk = self.NostrTools.getPublicKey(sk);
   } else {
-    sk = Uint8Array.from(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data);
+    sk = Uint8Array.from(self.NostrTools.nip19.decode(localStorage.getItem('privkey')).data);
     document.querySelector('#keys input[name="privkey"]').value = localStorage.getItem('privkey');
-    pk = window.NostrTools.getPublicKey(sk);
+    pk = self.NostrTools.getPublicKey(sk);
   }
 
   document.querySelector('#keys input[name="privkey"]').addEventListener("change", function() {
-    pk = window.NostrTools.getPublicKey(sk) // `pk` is a hex string
+    pk = self.NostrTools.getPublicKey(sk) // `pk` is a hex string
   });
 
-  window.pool = new window.NostrTools.SimplePool({enableReconnect: true, enablePing: true})
+  self.pool = new self.NostrTools.SimplePool({enableReconnect: true, enablePing: true})
 
-  window.relays = getRelays();
+  self.relays = getRelays();
 
   var dirty = false;
   document.querySelector('#keys input[name="privkey"]').disabled = true;
@@ -355,20 +367,20 @@ initSqlJs(config).then(function(SQL){
 
   var filter;
   var kind;
-  if (window.mode == "PopUpVideo") {
+  if (self.mode == "PopUpVideo") {
     kind = 1;
     filter = {kinds: [kind], '#t': ["popupvideo"], since: 1750046400}
   }
 
-  var h = window.pool.subscribeMany(
+  var h = self.pool.subscribeMany(
     relays,[
       filter
     ],
     {
       onevent(event) {
         toggleConnectionState(true);
-        if (event && event.pubkey && event.content && event.kind == 40 && window.NostrTools.verifyEvent(event, event.pubkey) && event.created_at > 1750046400) {
-          importToast(event, window.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
+        if (event && event.pubkey && event.content && event.kind == 40 && self.NostrTools.verifyEvent(event, event.pubkey) && event.created_at > 1750046400) {
+          importToast(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
           dirty = true;
         }
       },
@@ -388,39 +400,39 @@ initSqlJs(config).then(function(SQL){
     var filters = [];
     var kind;
 
-    if (window.mode == "PopUpVideo") {
-      var stmt = window.db.prepare("SELECT * FROM toasts WHERE kind = 40");
+    if (self.mode == "PopUpVideo") {
+      var stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 40");
       kind = 42; // children of channel messages are actually kind 42
       var obj = document.querySelector('#yak');
     }
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);
-      if (window.mode == "PopUpVideo") {
+      if (self.mode == "PopUpVideo") {
         filters.push({kinds: [42], '#e': [event.id]});
       }
     }
 
-    window.filters = filters;
+    self.filters = filters;
     console.log('filters: '+ filters.toString());
 
-    var h = window.pool.subscribeMany(
+    var h = self.pool.subscribeMany(
       relays, filters,
       {
         onevent(event) {
           toggleConnectionState(true);
-          if (event && event.pubkey && event.content && event.kind == kind && window.NostrTools.verifyEvent(event, event.pubkey)) {
-            importNote(event, window.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
+          if (event && event.pubkey && event.content && event.kind == kind && self.NostrTools.verifyEvent(event, event.pubkey)) {
+            importNote(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
 
-            if (window.hasFinishedLoading) { // Trigger a redraw if this is after the initial load...
+            if (self.hasFinishedLoading) { // Trigger a redraw if this is after the initial load...
               if (document.getElementById('search-bar').value == "") { // If yes
-                drawToasts(document.querySelector('.toasts-container'), window.users, "recent");
-                window.lastDrawMode = "recent";
+                drawToasts(document.querySelector('.toasts-container'), self.users, "recent");
+                self.lastDrawMode = "recent";
               } else { // If no.
                 // Only redraw rooms we're actually in if a new message comes in - otherwise, just ignore it.
                 var weShouldRedraw = false;
                 if (document.getElementById('search-bar').value.startsWith('note')) {
-                  var activeRoom = window.NostrTools.nip19.decode(document.getElementById('search-bar').value).data;
+                  var activeRoom = self.NostrTools.nip19.decode(document.getElementById('search-bar').value).data;
 
                   event["tags"].forEach((tag) => {
                     if (tag[0] == "e" && tag[3] && tag[3] == 'root' && tag[1] == activeRoom) {
@@ -440,7 +452,7 @@ initSqlJs(config).then(function(SQL){
                   }
                   searchResults(document.getElementById('search-bar').value);
                   if (shouldScroll) {
-                    if (window.mode == "PopUpVideo") {
+                    if (self.mode == "PopUpVideo") {
                       document.querySelector('#container').scrollTo({left: 0, top: document.querySelector('#container').scrollHeight});
                     }
                   }
@@ -461,12 +473,12 @@ initSqlJs(config).then(function(SQL){
   }
 
   const searchBar = document.getElementById('search-bar');
-  window.searchResults = (searchValue) => {
+  self.searchResults = (searchValue) => {
     var mode = '';
     if (!searchValue || searchValue == "" || searchValue == "https://" || searchValue == "http://") {
       mode = 'recent';
     } else if ((searchValue.startsWith('https://') || searchValue.startsWith('http://')) && (searchValue.split("/").length - 1) > 2) {
-      if (window.mode == "PopUpVideo") {
+      if (self.mode == "PopUpVideo") {
         // Pop Up Video only supports one chat room per domain, so URL-mode isn't a thing
         if (searchValue.startsWith('https://')) {
           searchValue = searchValue.substring(8, searchValue.length);
@@ -498,8 +510,8 @@ initSqlJs(config).then(function(SQL){
       l.style.display = 'none';
     });
     document.querySelector('#yak').style.display = 'block';
-    drawToasts(document.querySelector('.toasts-container'), window.users, mode);
-    window.lastDrawMode = mode;
+    drawToasts(document.querySelector('.toasts-container'), self.users, mode);
+    self.lastDrawMode = mode;
     modalInitialization();
   };
 
@@ -519,15 +531,15 @@ initSqlJs(config).then(function(SQL){
     event.preventDefault();
 
     // Draw first, then update the database to mark everything as read
-    drawToasts(document.querySelector('#alerts .toasts-container'), window.users, "alerts");
+    drawToasts(document.querySelector('#alerts .toasts-container'), self.users, "alerts");
 
-    var stmt = window.db.exec("UPDATE alerts SET read = true WHERE read = false");
+    var stmt = self.db.exec("UPDATE alerts SET read = true WHERE read = false");
 
     updateAlertsIndicator();
     syncDatabase();
   }
 
-  window.addEventListener('popstate', function(event) {
+  self.addEventListener('popstate', function(event) {
     if (event.state) {
       state = event.state;
       document.title = state.title;
@@ -566,18 +578,18 @@ initSqlJs(config).then(function(SQL){
   }
 
   function toggleFavourite(id) {
-    var stmt = window.db.prepare("SELECT * FROM toasts WHERE id = $id");
+    var stmt = self.db.prepare("SELECT * FROM toasts WHERE id = $id");
     stmt.bind({$id: id});
     while(stmt.step()) {
       var toast = stmt.getAsObject();
-      window.db.run("UPDATE toasts SET favourite = ? WHERE id = ?", [!toast.favourite, id]);
+      self.db.run("UPDATE toasts SET favourite = ? WHERE id = ?", [!toast.favourite, id]);
     }
     syncDatabase();
     exportSettings();
   }
 
   function markToastAsRead(id) {
-    window.db.run("UPDATE toasts SET read_at = ? WHERE id = ?", [Math.floor(Date.now() / 1000), window.NostrTools.nip19.decode(id)["data"]]);
+    self.db.run("UPDATE toasts SET read_at = ? WHERE id = ?", [Math.floor(Date.now() / 1000), self.NostrTools.nip19.decode(id)["data"]]);
     syncDatabase();
   }
 
@@ -586,7 +598,7 @@ initSqlJs(config).then(function(SQL){
     var dirty = false;
 
     // Get the public keys of everyone who's written a toast
-    if (window.mode == "PopUpVideo") {
+    if (self.mode == "PopUpVideo") {
       var stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40");
     }
 
@@ -597,7 +609,7 @@ initSqlJs(config).then(function(SQL){
     }
 
     // Get the public keys of everyone who's written a note
-    if (window.mode == "PopUpVideo") {
+    if (self.mode == "PopUpVideo") {
       var stmt = db.prepare("SELECT * FROM notes WHERE kind = 42");
     }
     while(stmt.step()) {
@@ -618,16 +630,16 @@ initSqlJs(config).then(function(SQL){
       var event = JSON.parse(row.note);
 
       // Load the rows from the DB first before loading from the network
-      if (window.users[event.pubkey] === undefined) {
-        window.users[event.pubkey] = event;
-        if (event.pubkey == window.pubKey) {
-          displayProfile(window.pubKey);
+      if (self.users[event.pubkey] === undefined) {
+        self.users[event.pubkey] = event;
+        if (event.pubkey == self.pubKey) {
+          displayProfile(self.pubKey);
         }
       }
     }
 
 
-    var h = window.pool.subscribeMany(
+    var h = self.pool.subscribeMany(
       relays,[
         {kinds: [0], authors: userPubkeys}
       ],
@@ -636,7 +648,7 @@ initSqlJs(config).then(function(SQL){
           toggleConnectionState(true);
 
           if (event && event.pubkey && event.kind == 0) {
-            importNote(event, window.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
+            importNote(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
             dirty = true;
           }
         },
@@ -644,8 +656,8 @@ initSqlJs(config).then(function(SQL){
           if (dirty) {
             syncDatabase();
           }
-          if (!window.hasFinishedLoading) {
-            if (!window.browserExtension) {
+          if (!self.hasFinishedLoading) {
+            if (!self.browserExtension) {
               updateAlertsIndicator(); // If there are new alerts, update the UI to show them
               document.querySelectorAll('.post-boot').forEach((i) => {
                 i.classList.remove('post-boot');
@@ -655,8 +667,8 @@ initSqlJs(config).then(function(SQL){
               newToast(document.querySelector('#newToastContainer'), {url: ''});
 
               // Ready to draw page contents - has someone attempted a search (via the URL slug) ?
-              if (window.location.hash) {
-                document.getElementById('search-bar').value = window.location.hash.substring(1, window.location.hash.length)
+              if (self.location.hash) {
+                document.getElementById('search-bar').value = self.location.hash.substring(1, self.location.hash.length)
               } else {
                 // Fragment doesn't exist
               }
@@ -667,7 +679,7 @@ initSqlJs(config).then(function(SQL){
                 searchResults(document.getElementById('search-bar').value);
               }
             }
-            window.hasFinishedLoading = true;
+            self.hasFinishedLoading = true;
           }
         },
         onclose() {
@@ -686,14 +698,14 @@ initSqlJs(config).then(function(SQL){
         const row = stmt.getAsObject();
         alerts[row.id] = row.read;
       }
-      window.alerts = alerts;
+      self.alerts = alerts;
     }
 
     console.log("Drawing Toasts! - Mode = " + mode);
     try {
       container.querySelector('.toasts-loading').classList.add("active");
       container.querySelector('.toasts').innerHTML = '';
-      if (window.lastDrawMode != mode) {
+      if (self.lastDrawMode != mode) {
         container.querySelector('.toast-new').remove();
       }
       container.querySelector('.toast-new-button').remove();
@@ -725,7 +737,7 @@ initSqlJs(config).then(function(SQL){
     if (mode.startsWith("domain-")) {
       console.log("Filtering to domain name " + mode.substring(7));
 
-      if (window.mode == "PopUpVideo") {
+      if (self.mode == "PopUpVideo") {
         stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND domain LIKE $domain ORDER BY created_at DESC");
         emptyMsg = "Sorry, there are no channels named " + mode.substring(7);
         var closeMatchMsg = "Not what you're looking for?";
@@ -740,7 +752,7 @@ initSqlJs(config).then(function(SQL){
       shouldShowMessages = false;
 
     } else if (mode == "recent") {
-      if (window.mode == "PopUpVideo") {
+      if (self.mode == "PopUpVideo") {
         stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 ORDER BY created_at DESC");
         emptyMsg = "Sorry, there are no channels";
         pageTitle = 'Channels'
@@ -771,11 +783,11 @@ initSqlJs(config).then(function(SQL){
       pageTitle = 'Search Results'
       pageSubTitle = 'URL: ' + mode.substring(4);
     } else if (mode.startsWith("profile")) {
-      if (window.mode == "PopUpVideo") {
+      if (self.mode == "PopUpVideo") {
         stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND pubkey = $pubkey ORDER BY created_at DESC");
       }
       console.log("Filtering to profile " + mode.substring(8));
-      var pubkey = window.NostrTools.nip19.decode(mode.substring(8)).data;
+      var pubkey = self.NostrTools.nip19.decode(mode.substring(8)).data;
       stmt.bind({$pubkey: pubkey})
 
       shouldShowHeadings = true;
@@ -790,14 +802,14 @@ initSqlJs(config).then(function(SQL){
         username = 'Unknown';
       }
 
-      if (window.mode == "PopUpVideo") {
+      if (self.mode == "PopUpVideo") {
         emptyMsg = "Sorry, there are no channels from profile " + mode.substring(8) + ' (' + pubkey + ')';
         pageTitle = 'Channels from ' + username;
       }
 
       pageSubTitle = mode.substring(8);
     } else if (mode.startsWith("toast")) {
-      if (window.mode == "PopUpVideo") {
+      if (self.mode == "PopUpVideo") {
         stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND id = $id ORDER BY created_at DESC");
       }
 
@@ -806,9 +818,9 @@ initSqlJs(config).then(function(SQL){
       console.log("Filtering to toast " + query);
 
       if (query.startsWith("note")) {
-        var id = window.NostrTools.nip19.decode(query).data;
+        var id = self.NostrTools.nip19.decode(query).data;
       } else if (query.startsWith('nevent')) {
-        var id = window.NostrTools.nip19.decode(query).data.id;
+        var id = self.NostrTools.nip19.decode(query).data.id;
       }
 
       stmt.bind({$id: id});
@@ -818,7 +830,7 @@ initSqlJs(config).then(function(SQL){
 
       var row;
 
-      if (window.mode == "PopUpVideo") {
+      if (self.mode == "PopUpVideo") {
         var channelName = 'Unknown';
         while (stmt.step()) {
           row = stmt.getAsObject();
@@ -895,7 +907,7 @@ initSqlJs(config).then(function(SQL){
       // This is only doable with an index of tags though.
       // {kinds: [1], '#e': [mode.substring(8), "", "root/reply"]}
 
-      if (window.mode == "PopUpVideo") {
+      if (self.mode == "PopUpVideo") {
         stmt = db.prepare("SELECT * FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid ORDER BY created_at ASC");
       }
       stmt.bind({$id: mode.substring(8), $noteid: '%' + mode.substring(8) + '%'});
@@ -972,7 +984,7 @@ initSqlJs(config).then(function(SQL){
         }
       }
 
-      if (window.mode == "PopUpVideo" && mode.startsWith('domain') && !isExactMatch) {
+      if (self.mode == "PopUpVideo" && mode.startsWith('domain') && !isExactMatch) {
         isExactMatch = JSON.parse(event["content"])["name"].toLowerCase() == mode.substring(7).toLowerCase();
       }
 
@@ -991,13 +1003,13 @@ initSqlJs(config).then(function(SQL){
       if (shouldShowHeadings) {
         var article = document.createElement('div');
 
-        if (window.mode == "PopUpVideo") {
+        if (self.mode == "PopUpVideo") {
           var ccStmt = db.prepare("SELECT COUNT(*) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid");
           var pStmt = db.prepare("SELECT COUNT(DISTINCT pubkey) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid");
           pStmt.bind({$id: event.id, $noteid: '%' + event.id + '%'});
 
           var isParticipantStmt = db.prepare("SELECT COUNT(*) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid AND pubkey = $pubkey");
-          isParticipantStmt.bind({$id: event.id, $noteid: '%' + event.id + '%', $pubkey: window.pubKey});
+          isParticipantStmt.bind({$id: event.id, $noteid: '%' + event.id + '%', $pubkey: self.pubKey});
 
           var isParticipant = false;
           if (isParticipantStmt.step()) {var isParticipantCount = isParticipantStmt.getAsObject()["COUNT(*)"]}
@@ -1022,7 +1034,7 @@ initSqlJs(config).then(function(SQL){
             article.classList.add('favourite')
           }
 
-          var isCreator = (event.pubkey == window.pubKey);
+          var isCreator = (event.pubkey == self.pubKey);
 
           if (isCreator) {
             article.classList.add('creator');
@@ -1037,7 +1049,7 @@ initSqlJs(config).then(function(SQL){
         if (ccStmt.step()) {var messagesCount = ccStmt.getAsObject()["COUNT(*)"]}
         var messagesString = '';
 
-        if (window.mode == "PopUpVideo") {
+        if (self.mode == "PopUpVideo") {
           if (messagesCount != 1) {
             messagesString = 'messages';
           } else {
@@ -1065,7 +1077,7 @@ initSqlJs(config).then(function(SQL){
         var epochTimestamp = new Date(0);
         epochTimestamp.setUTCSeconds(event.created_at);
 
-        if (window.mode == "PopUpVideo") {
+        if (self.mode == "PopUpVideo") {
           var roomName = 'Unknown';
 
           try {
@@ -1103,14 +1115,14 @@ initSqlJs(config).then(function(SQL){
           searchResults(document.getElementById('search-bar').value);
           history.pushState({hash: event.target.dataset.id, title: document.title}, '', '#' + event.target.dataset.id);
         }
-        messagesLink.href = '#' + window.NostrTools.nip19.noteEncode(event.id);
-        messagesLink.dataset.id = window.NostrTools.nip19.noteEncode(event.id);
+        messagesLink.href = '#' + self.NostrTools.nip19.noteEncode(event.id);
+        messagesLink.dataset.id = self.NostrTools.nip19.noteEncode(event.id);
 
-        if (window.mode == "PopUpVideo") {
+        if (self.mode == "PopUpVideo") {
           var titleLink = article.querySelector('a.title');
           titleLink.onclick = messagesLink.onclick;
-          titleLink.href = '#' + window.NostrTools.nip19.noteEncode(event.id);
-          titleLink.dataset.id = window.NostrTools.nip19.noteEncode(event.id);
+          titleLink.href = '#' + self.NostrTools.nip19.noteEncode(event.id);
+          titleLink.dataset.id = self.NostrTools.nip19.noteEncode(event.id);
         }
 
         try { // Toastr only
@@ -1135,8 +1147,8 @@ initSqlJs(config).then(function(SQL){
             history.pushState({hash: event.target.dataset.pubkey, title: document.title}, '', "#" + event.target.dataset.pubkey);
           }
 
-          submitterLink.href = '#' + window.NostrTools.nip19.npubEncode(event.pubkey);
-          submitterLink.dataset.pubkey = window.NostrTools.nip19.npubEncode(event.pubkey);
+          submitterLink.href = '#' + self.NostrTools.nip19.npubEncode(event.pubkey);
+          submitterLink.dataset.pubkey = self.NostrTools.nip19.npubEncode(event.pubkey);
         } catch {}
       }
 
@@ -1175,7 +1187,7 @@ initSqlJs(config).then(function(SQL){
 
         // Add the parent post itself as a reference
         eTags.push(['e', event.id, '', marker, event.pubkey]);
-        if (window.mode == "Toastr") {
+        if (self.mode == "Toastr") {
           newNote(children, {eTags: eTags});
         }
         drawToasts(container.querySelector('.toasts'), knownUsers, "messages-" + event.id);
@@ -1183,7 +1195,7 @@ initSqlJs(config).then(function(SQL){
         console.log('mode:' + container.querySelector('.toasts').children.length);
 
         var classFilter = '';
-        if (window.mode == "PopUpVideo") {
+        if (self.mode == "PopUpVideo") {
           classFilter = '.note';
         }
 
@@ -1238,10 +1250,10 @@ initSqlJs(config).then(function(SQL){
 
     try {
       container.querySelector('.toasts-loading').classList.remove("active");
-      if (showEmptyMessage || (window.mode == "PopUpVideo" && mode.startsWith('domain-') && !isExactMatch)) {
+      if (showEmptyMessage || (self.mode == "PopUpVideo" && mode.startsWith('domain-') && !isExactMatch)) {
         var actionMsg = 'Create';
         // If a room similar to the one we were looking for exists, display the 'close match' message
-        // typeof closeMatchMsg !== 'undefined' is basically equivalent to (window.mode == "PopUpVideo" && mode.startsWith('domain-'))
+        // typeof closeMatchMsg !== 'undefined' is basically equivalent to (self.mode == "PopUpVideo" && mode.startsWith('domain-'))
         if (typeof closeMatchMsg !== 'undefined' && !showEmptyMessage && !isExactMatch) {
           container.querySelector('.toasts-empty').innerHTML = closeMatchMsg;
           actionMsg = 'Create channel ' + mode.substring(7);
@@ -1253,8 +1265,8 @@ initSqlJs(config).then(function(SQL){
         }
 
         // Add a button to the empty message that opens the newToast UI
-        if (mode.startsWith('url-') || (window.mode == "PopUpVideo" && mode.startsWith('domain-'))) {
-          if (window.mode == "PopUpVideo") {
+        if (mode.startsWith('url-') || (self.mode == "PopUpVideo" && mode.startsWith('domain-'))) {
+          if (self.mode == "PopUpVideo") {
             var newItem = `<form class="toast-new-form" autocomplete="off" action="">
               <input type="hidden" name="url" value="${mode.substring(7)}" placeholder="Room or domain name" required="">
               <button type="submit" class="toast-submit-button">${actionMsg}</button>
@@ -1275,7 +1287,7 @@ initSqlJs(config).then(function(SQL){
         container.querySelector('.toasts-empty').innerHTML = '';
         container.querySelector('.toasts-empty').classList.remove("active");
       }
-      if (mode.startsWith('toast-') && window.lastDrawMode != mode) {
+      if (mode.startsWith('toast-') && self.lastDrawMode != mode) {
         document.querySelector('#footer').innerHTML = ''; // remove old forms
         newNote(document.querySelector('#footer'), {eTags: [['e', event.id, '', 'root', event.pubkey]], showButton: true});
       }
@@ -1298,7 +1310,7 @@ initSqlJs(config).then(function(SQL){
     }
 
     var submitText;
-    if (window.mode == "PopUpVideo") {
+    if (self.mode == "PopUpVideo") {
       submitText = "Create";
     }
 
@@ -1311,10 +1323,10 @@ initSqlJs(config).then(function(SQL){
         <div class="content">
           <form class="toast-new-form" autocomplete="off" action="">`
 
-          if (window.mode == "Toastr") { innerHTML += `
+          if (self.mode == "Toastr") { innerHTML += `
             <input type="url" name="url" value="" placeholder="URL" required></input>
             <input type="text" name="title" placeholder="Write a title..." required></input>
-          `} else if (window.mode == "PopUpVideo") { innerHTML += `
+          `} else if (self.mode == "PopUpVideo") { innerHTML += `
             <input type="text" name="url" value="" placeholder="Room or domain name" required></input>
           `}
 
