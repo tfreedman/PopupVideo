@@ -37,8 +37,8 @@ function editKeys() {
 }
 
 function cancelUpdateKeys() {
-  sk = Uint8Array.from(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data);
-  document.querySelector('#keys input[name="privkey"]').value = localStorage.getItem('privkey');
+  sk = Uint8Array.from(window.NostrTools.nip19.decode(storage.local.get('privkey')).data);
+  document.querySelector('#keys input[name="privkey"]').value = storage.local.get('privkey');
   document.querySelector('#keys input[name="privkey"]').disabled = true;
   document.querySelector('#keys .edit-container').style.display = 'block'
   document.querySelector('#keys .submit-container').style.display = 'none';
@@ -47,8 +47,8 @@ function cancelUpdateKeys() {
 function updateKeys() {
   try { // Basic validation - if we can generate an npub from the input, it's a valid key
     if (window.NostrTools.nip19.decode(document.querySelector('#keys input[name="privkey"]').value).data) {
-      localStorage.setItem("privkey", document.querySelector('#keys input[name="privkey"]').value);
-      window.localStorage.setItem("version", 0); // This will mismatch with the existing DB version, causing it to be blown away on reload
+      storage.local.set("privkey", document.querySelector('#keys input[name="privkey"]').value);
+      storage.local.set("version", 0); // This will mismatch with the existing DB version, causing it to be blown away on reload
       document.querySelector('#keys .edit-container').style.display = 'block'
       document.querySelector('#keys .submit-container').style.display = 'none';
       window.location.reload();
@@ -214,7 +214,7 @@ const signNoteForFileUpload = async(files, message, kind, urlBox) => {
     var e = {created_at: Math.floor(Date.now() / 1000), kind: 24242, tags: tags, content: ""};
 
     // NIP07 unsupported
-    var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data));
+    var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(storage.local.get('privkey')).data));
     console.log("signed note without nip07: " + JSON.stringify(note));
     uploadFile(formData, message, urlBox, JSON.stringify(note));
   });
@@ -248,7 +248,7 @@ function updateProfile(event) {
   }
 
   // NIP07 unsupported
-  var event = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data))
+  var event = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(storage.local.get('privkey')).data))
   console.log("signed event without nip07: " + event);
   uploadProfileEvent(event);
 }
@@ -350,7 +350,7 @@ function newNoteSubmit(event) {
   }
 
   // NIP07 unsupported
-  var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(localStorage.getItem('privkey')).data))
+  var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(storage.local.get('privkey')).data))
   console.log("signed note without nip07: " + note);
   uploadNote(data, note, data.parentElement.parentElement.parentElement);
 }
