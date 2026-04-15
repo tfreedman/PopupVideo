@@ -1,3 +1,15 @@
+async function writeClipboardText(text) {
+  if (text === undefined) {
+    text = "<blank>";
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
 function createAccountPopUp() {
   var div = document.createElement("div");
   div.classList.add('modal');
@@ -194,6 +206,6 @@ waitForEl("#movie_player").then(() => {
 });
 
 // Test code
-browser.runtime.sendMessage({ action: "hi" }, response => {
+browser.runtime.sendMessage({ action: "getNostrKeys" }, response => {
   console.log(response);
 });
