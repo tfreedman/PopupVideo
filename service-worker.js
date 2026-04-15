@@ -58,10 +58,10 @@ function exportSettings() {
 
   console.log(JSON.stringify(settings));
   // NIP07 unsupported
-  var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(localStorage.getItem('privkey')).data, self.pubKey);
+  var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(storage.local.get('privkey')).data, self.pubKey);
   var ciphertext = self.NostrTools.nip44.v2.encrypt(JSON.stringify(settings), convoKey, randomBytes(32));
   var e = {created_at: Math.floor(Date.now() / 1000), kind: 30078, tags: [['d', self.mode]], content: ciphertext};
-  var note = self.NostrTools.finalizeEvent(e, Uint8Array.from(self.NostrTools.nip19.decode(localStorage.getItem('privkey')).data))
+  var note = self.NostrTools.finalizeEvent(e, Uint8Array.from(self.NostrTools.nip19.decode(storage.local.get('privkey')).data))
   console.log("signed note without nip07: " + note);
   uploadNote(null, note, null);
 }
@@ -293,7 +293,7 @@ initSqlJs(config).then(function(SQL){
 
             // Notes are encrypted using NIP-44. We need to first decrypt it, then parse it.
             // NIP07 unsupported
-            var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(localStorage.getItem('privkey')).data, self.pubKey);
+            var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(storage.local.get('privkey')).data, self.pubKey);
             var plaintext = self.NostrTools.nip44.v2.decrypt(value['content'], convoKey);
             value['content'] = plaintext;
             importSettings(JSON.stringify(value));
@@ -336,17 +336,17 @@ initSqlJs(config).then(function(SQL){
   console.log("Cached Toasts: " + db.exec("SELECT COUNT(*) FROM toasts WHERE kind = 1")[0].values[0][0]);
 
   // Start Nostr connections
-  var sk = localStorage.getItem('privkey');
+  var sk = storage.local.get('privkey');
   var pk;
 
   if (sk === null) {
     document.querySelector('#keys input[name="privkey"]').value = self.NostrTools.nip19.nsecEncode(self.NostrTools.generateSecretKey());
-    localStorage.setItem("privkey", document.querySelector('#keys input[name="privkey"]').value);
-    sk = Uint8Array.from(self.NostrTools.nip19.decode(localStorage.getItem('privkey')).data);
+    storage.local.set("privkey", document.querySelector('#keys input[name="privkey"]').value);
+    sk = Uint8Array.from(self.NostrTools.nip19.decode(storage.local.get('privkey')).data);
     pk = self.NostrTools.getPublicKey(sk);
   } else {
-    sk = Uint8Array.from(self.NostrTools.nip19.decode(localStorage.getItem('privkey')).data);
-    document.querySelector('#keys input[name="privkey"]').value = localStorage.getItem('privkey');
+    sk = Uint8Array.from(self.NostrTools.nip19.decode(storage.local.get('privkey')).data);
+    document.querySelector('#keys input[name="privkey"]').value = storage.local.get('privkey');
     pk = self.NostrTools.getPublicKey(sk);
   }
 
