@@ -4,9 +4,13 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+config = {
+  locateFile: filename => `${filename}`
+}
+
 function syncDatabase() {
   var dbstr = toBinString(window.db.export());
-  window.localStorage.setItem(window.mode + ".sqlite", dbstr);
+  storage.local.set(window.mode + ".sqlite", dbstr);
 }
 
 function exportSettings() {
@@ -97,7 +101,7 @@ function importSettings(note) {
 
   // We don't want to re-import the settings we just exported, so we make sure the app thinks
   // the current settings are newer by adding 1 to the timestamp
-  window.localStorage.setItem("settings", JSON.stringify(created_at + 1));
+  storage.local.set("settings", JSON.stringify(created_at + 1));
   window.settings = note['created_at'] + 1;
 
   syncDatabase();
@@ -271,8 +275,8 @@ initSqlJs(config).then(function(SQL){
         }
         if (dirty) {
           // Parse the settings inside the note, and import them into the DB
-          if (value['created_at'] < JSON.parse(window.localStorage.getItem("settings"))) {
-            console.log('importing setting - time delta = ' + JSON.parse(window.localStorage.getItem("settings")) - value['created_at'])
+          if (value['created_at'] < JSON.parse(storage.local.get("settings"))) {
+            console.log('importing setting - time delta = ' + JSON.parse(storage.local.get("settings")) - value['created_at'])
 
             // Notes are encrypted using NIP-44. We need to first decrypt it, then parse it.
             // NIP07 unsupported
@@ -293,8 +297,8 @@ initSqlJs(config).then(function(SQL){
     }
   }
 
-  var dbVersion = window.localStorage.getItem("version");
-  var dbstr = window.localStorage.getItem(window.mode + ".sqlite");
+  var dbVersion = storage.local.get("version");
+  var dbstr = storage.local.get(window.mode + ".sqlite");
 
   if (dbstr && dbVersion !== null && dbVersion == window.version) {
     console.log("Loading existing database - version numbers match");
@@ -309,9 +313,9 @@ initSqlJs(config).then(function(SQL){
   }
 
   var dbstr = toBinString(db.export());
-  window.localStorage.setItem(window.mode + ".sqlite", dbstr);
-  window.localStorage.setItem("version", window.version);
-  window.localStorage.setItem("settings", JSON.stringify(0));
+  storage.local.set(window.mode + ".sqlite", dbstr);
+  storage.local.set("version", window.version);
+  storage.local.set("settings", JSON.stringify(0));
   window.db = db;
 
   window.browserExtension = true;

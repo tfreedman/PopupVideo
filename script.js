@@ -29,10 +29,6 @@ function toggleConnectionState(state) {
   }
 }
 
-config = {
-  locateFile: filename => `${filename}`
-}
-
 function editKeys() {
   updateProfile(); // dunno why this was here originally, but let's not break it for now
   document.querySelector('#keys .edit-container').style.display = 'none'
