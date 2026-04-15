@@ -1982,12 +1982,6 @@ innerHTML += `<button type="submit" class="toast-submit-button">${submitText}</b
       </div>
     `
 
-    const pickerOptions = { onEmojiSelect: function(e){document.querySelector('textarea').value += e.native; console.log(e);}, previewPosition: 'none'}
-    const picker = new EmojiMart.Picker(pickerOptions)
-    if (document.querySelector('#emoji-picker').childNodes.length == 0) {
-      document.querySelector('#emoji-picker').appendChild(picker);
-    }
-
     div.innerHTML = innerHTML;
 
     var textarea = div.querySelector("textarea");
@@ -2001,8 +1995,6 @@ innerHTML += `<button type="submit" class="toast-submit-button">${submitText}</b
     cancelButton.addEventListener('click', (e) => deleteReplyContent(e));
 
     node.append(div);
-
-    document.querySelector('#show-emoji-picker-button').addEventListener('click', function(event) {event.stopPropagation(); toggleEmojiWindow(event)});
   }
 });
 
