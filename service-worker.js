@@ -28,31 +28,29 @@ function syncDatabase() {
 
 function exportSettings() {
   var settings = new Object();
-  if (self.mode == "PopUpVideo") {
-    // This currently only exports favourites and alerts
+  // This currently only exports favourites and alerts
 
-    // Favourites
+  // Favourites
 
-    settings["toasts"] = [];
-    var stmt = self.db.prepare("SELECT * FROM toasts");
+  settings["toasts"] = [];
+  var stmt = self.db.prepare("SELECT * FROM toasts");
 
-    while(stmt.step()) {
-      const row = stmt.getAsObject();
-      if (row.favourite) {
-        settings["toasts"].push({id: row.id, favourite: true})
-      }
+  while(stmt.step()) {
+    const row = stmt.getAsObject();
+    if (row.favourite) {
+      settings["toasts"].push({id: row.id, favourite: true})
     }
+  }
 
-    // Alerts
+  // Alerts
 
-    settings["alerts"] = [];
-    var stmt = self.db.prepare("SELECT * FROM alerts");
+  settings["alerts"] = [];
+  var stmt = self.db.prepare("SELECT * FROM alerts");
 
-    while(stmt.step()) {
-      const row = stmt.getAsObject();
-      if (row.read) {
-        settings["alerts"].push({id: row.id, read: true})
-      }
+  while(stmt.step()) {
+    const row = stmt.getAsObject();
+    if (row.read) {
+      settings["alerts"].push({id: row.id, read: true})
     }
   }
 
@@ -74,42 +72,39 @@ function importSettings(note) {
   console.log('attempting to import settings: ');
   console.log(settings);
 
-  if (self.mode == "PopUpVideo") {
-    // This currently only imports favourites and alerts
+  // This currently only imports favourites and alerts
 
-    // Favourites
-    Object.keys(settings["toasts"]).forEach(key => {
-      var toast = settings["toasts"][key];
-      var stmt = self.db.prepare("SELECT * FROM toasts WHERE id = $id");
-      stmt.bind({$id: toast.id});
-      var result = null;
-      while(stmt.step()) {
-        result = toast.id;
-        console.log('setting favourite on toast ' + toast.id);
-        self.db.run("UPDATE toasts SET favourite = ? WHERE id = ?", [toast.favourite, toast.id]);
-      }
-      if (result === null) {
-        console.log('No match for ' + toast.id + ' in toasts table');
-      }
-    });
+  // Favourites
+  Object.keys(settings["toasts"]).forEach(key => {
+    var toast = settings["toasts"][key];
+    var stmt = self.db.prepare("SELECT * FROM toasts WHERE id = $id");
+    stmt.bind({$id: toast.id});
+    var result = null;
+    while(stmt.step()) {
+      result = toast.id;
+      console.log('setting favourite on toast ' + toast.id);
+      self.db.run("UPDATE toasts SET favourite = ? WHERE id = ?", [toast.favourite, toast.id]);
+    }
+    if (result === null) {
+      console.log('No match for ' + toast.id + ' in toasts table');
+    }
+  });
 
-    // Alerts
-    Object.keys(settings["alerts"]).forEach(key => {
-      var note = settings["alerts"][key];
-      var stmt = db.prepare("SELECT * FROM alerts WHERE id = $id");
-      stmt.bind({$id: note.id});
-      var result = null;
-      while(stmt.step()) {
-        result = note.id;
-        console.log('setting read on alert ' + note.id);
-        db.run("UPDATE alerts SET read = ? WHERE id = ?", [note.read, note.id]);
-      }
-      if (result === null) {
-        console.log('No match for ' + note.id + ' in alerts table');
-      }
-    });
-
-  }
+  // Alerts
+  Object.keys(settings["alerts"]).forEach(key => {
+    var note = settings["alerts"][key];
+    var stmt = db.prepare("SELECT * FROM alerts WHERE id = $id");
+    stmt.bind({$id: note.id});
+    var result = null;
+    while(stmt.step()) {
+      result = note.id;
+      console.log('setting read on alert ' + note.id);
+      db.run("UPDATE alerts SET read = ? WHERE id = ?", [note.read, note.id]);
+    }
+    if (result === null) {
+      console.log('No match for ' + note.id + ' in alerts table');
+    }
+  });
   // TODO: redraw UI so that the settings that were imported are actually visible
 
   // We don't want to re-import the settings we just exported, so we make sure the app thinks
@@ -152,11 +147,9 @@ initSqlJs(config).then(function(SQL){
       }
     });
 
-    if (self.mode == "PopUpVideo") {
-      // just use the room name as the raw value
-      var url = rValue // is this actually used anywhere?;
-      var domain = JSON.parse(value["content"])["name"].toLowerCase();
-    }
+    // just use the room name as the raw value
+    var url = rValue // is this actually used anywhere?;
+    var domain = JSON.parse(value["content"])["name"].toLowerCase();
 
     console.log('Inserting ' + value['id'] + ' - (' + domain + ') into Toasts DB...');
     db.run("INSERT OR IGNORE INTO toasts (id, created_at, domain, url, pubkey, kind, note, favourite, read_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [value['id'], value['created_at'], domain, taggedUrl, value['pubkey'], value['kind'], note, false, 0]);
@@ -367,10 +360,8 @@ initSqlJs(config).then(function(SQL){
 
   var filter;
   var kind;
-  if (self.mode == "PopUpVideo") {
-    kind = 1;
-    filter = {kinds: [kind], '#t': ["popupvideo"], since: 1750046400}
-  }
+  kind = 1;
+  filter = {kinds: [kind], '#t': ["popupvideo"], since: 1750046400}
 
   var h = self.pool.subscribeMany(
     relays,[
@@ -400,17 +391,13 @@ initSqlJs(config).then(function(SQL){
     var filters = [];
     var kind;
 
-    if (self.mode == "PopUpVideo") {
-      var stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 40");
-      kind = 42; // children of channel messages are actually kind 42
-      var obj = document.querySelector('#yak');
-    }
+    var stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 40");
+    kind = 42; // children of channel messages are actually kind 42
+    var obj = document.querySelector('#yak');
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);
-      if (self.mode == "PopUpVideo") {
-        filters.push({kinds: [42], '#e': [event.id]});
-      }
+      filters.push({kinds: [42], '#e': [event.id]});
     }
 
     self.filters = filters;
@@ -452,9 +439,7 @@ initSqlJs(config).then(function(SQL){
                   }
                   searchResults(document.getElementById('search-bar').value);
                   if (shouldScroll) {
-                    if (self.mode == "PopUpVideo") {
-                      document.querySelector('#container').scrollTo({left: 0, top: document.querySelector('#container').scrollHeight});
-                    }
+                    document.querySelector('#container').scrollTo({left: 0, top: document.querySelector('#container').scrollHeight});
                   }
                 }
               }
@@ -478,16 +463,14 @@ initSqlJs(config).then(function(SQL){
     if (!searchValue || searchValue == "" || searchValue == "https://" || searchValue == "http://") {
       mode = 'recent';
     } else if ((searchValue.startsWith('https://') || searchValue.startsWith('http://')) && (searchValue.split("/").length - 1) > 2) {
-      if (self.mode == "PopUpVideo") {
-        // Pop Up Video only supports one chat room per domain, so URL-mode isn't a thing
-        if (searchValue.startsWith('https://')) {
-          searchValue = searchValue.substring(8, searchValue.length);
-        } else if (searchValue.startsWith('http://')) {
-          searchValue = searchValue.substring(7, searchValue.length);
-        }
-        searchValue = searchValue.split('/')[0]
-        mode = 'domain-' + searchValue;
+      // Pop Up Video only supports one chat room per domain, so URL-mode isn't a thing
+      if (searchValue.startsWith('https://')) {
+        searchValue = searchValue.substring(8, searchValue.length);
+      } else if (searchValue.startsWith('http://')) {
+        searchValue = searchValue.substring(7, searchValue.length);
       }
+      searchValue = searchValue.split('/')[0]
+      mode = 'domain-' + searchValue;
     } else if (searchValue.startsWith('npub')) {
       mode = 'profile-' + searchValue;
     } else if (searchValue.startsWith('note') || searchValue.startsWith('nevent')) {
@@ -598,9 +581,7 @@ initSqlJs(config).then(function(SQL){
     var dirty = false;
 
     // Get the public keys of everyone who's written a toast
-    if (self.mode == "PopUpVideo") {
-      var stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40");
-    }
+    var stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40");
 
     while(stmt.step()) {
       const row = stmt.getAsObject();
@@ -609,9 +590,7 @@ initSqlJs(config).then(function(SQL){
     }
 
     // Get the public keys of everyone who's written a note
-    if (self.mode == "PopUpVideo") {
-      var stmt = db.prepare("SELECT * FROM notes WHERE kind = 42");
-    }
+    var stmt = db.prepare("SELECT * FROM notes WHERE kind = 42");
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);
@@ -737,14 +716,12 @@ initSqlJs(config).then(function(SQL){
     if (mode.startsWith("domain-")) {
       console.log("Filtering to domain name " + mode.substring(7));
 
-      if (self.mode == "PopUpVideo") {
-        stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND domain LIKE $domain ORDER BY created_at DESC");
-        emptyMsg = "Sorry, there are no channels named " + mode.substring(7);
-        var closeMatchMsg = "Not what you're looking for?";
-        pageTitle = 'Search Results'
-        pageSubTitle = 'Room name: ' + mode.substring(7);
-        var isExactMatch = false;
-      }
+      stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND domain LIKE $domain ORDER BY created_at DESC");
+      emptyMsg = "Sorry, there are no channels named " + mode.substring(7);
+      var closeMatchMsg = "Not what you're looking for?";
+      pageTitle = 'Search Results'
+      pageSubTitle = 'Room name: ' + mode.substring(7);
+      var isExactMatch = false;
 
       stmt.bind({$domain: '%' + mode.substring(7).toLowerCase() + '%'});
 
@@ -752,13 +729,11 @@ initSqlJs(config).then(function(SQL){
       shouldShowMessages = false;
 
     } else if (mode == "recent") {
-      if (self.mode == "PopUpVideo") {
-        stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 ORDER BY created_at DESC");
-        emptyMsg = "Sorry, there are no channels";
-        pageTitle = 'Channels'
-        pageSubTitle = '';
-        showFilters = true;
-      }
+      stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 ORDER BY created_at DESC");
+      emptyMsg = "Sorry, there are no channels";
+      pageTitle = 'Channels'
+      pageSubTitle = '';
+      showFilters = true;
 
       shouldShowHeadings = true;
       shouldShowMessages = false;
@@ -783,9 +758,7 @@ initSqlJs(config).then(function(SQL){
       pageTitle = 'Search Results'
       pageSubTitle = 'URL: ' + mode.substring(4);
     } else if (mode.startsWith("profile")) {
-      if (self.mode == "PopUpVideo") {
-        stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND pubkey = $pubkey ORDER BY created_at DESC");
-      }
+      stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND pubkey = $pubkey ORDER BY created_at DESC");
       console.log("Filtering to profile " + mode.substring(8));
       var pubkey = self.NostrTools.nip19.decode(mode.substring(8)).data;
       stmt.bind({$pubkey: pubkey})
@@ -802,16 +775,12 @@ initSqlJs(config).then(function(SQL){
         username = 'Unknown';
       }
 
-      if (self.mode == "PopUpVideo") {
-        emptyMsg = "Sorry, there are no channels from profile " + mode.substring(8) + ' (' + pubkey + ')';
-        pageTitle = 'Channels from ' + username;
-      }
+      emptyMsg = "Sorry, there are no channels from profile " + mode.substring(8) + ' (' + pubkey + ')';
+      pageTitle = 'Channels from ' + username;
 
       pageSubTitle = mode.substring(8);
     } else if (mode.startsWith("toast")) {
-      if (self.mode == "PopUpVideo") {
-        stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND id = $id ORDER BY created_at DESC");
-      }
+      stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND id = $id ORDER BY created_at DESC");
 
       var query = mode.split('-')[1];
 
@@ -830,20 +799,18 @@ initSqlJs(config).then(function(SQL){
 
       var row;
 
-      if (self.mode == "PopUpVideo") {
-        var channelName = 'Unknown';
-        while (stmt.step()) {
-          row = stmt.getAsObject();
-          try {
-            channelName = JSON.parse(JSON.parse(row["note"])["content"])["name"];
-          } catch (e) { // Ignore it and just use Unknown for now
-          }
-          showFooter = true;
+      var channelName = 'Unknown';
+      while (stmt.step()) {
+        row = stmt.getAsObject();
+        try {
+          channelName = JSON.parse(JSON.parse(row["note"])["content"])["name"];
+        } catch (e) { // Ignore it and just use Unknown for now
         }
-
-        pageTitle = channelName;
-        emptyMsg = "Sorry, there are no notes corresponding to " + mode.substring(6) + ' (' + id + ')';
+        showFooter = true;
       }
+
+      pageTitle = channelName;
+      emptyMsg = "Sorry, there are no notes corresponding to " + mode.substring(6) + ' (' + id + ')';
       //pageSubTitle = mode.substring(6).split('-')[0];
       shouldShowBackButton = true;
       shouldShowRoomButtons = true;
@@ -907,9 +874,7 @@ initSqlJs(config).then(function(SQL){
       // This is only doable with an index of tags though.
       // {kinds: [1], '#e': [mode.substring(8), "", "root/reply"]}
 
-      if (self.mode == "PopUpVideo") {
-        stmt = db.prepare("SELECT * FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid ORDER BY created_at ASC");
-      }
+      stmt = db.prepare("SELECT * FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid ORDER BY created_at ASC");
       stmt.bind({$id: mode.substring(8), $noteid: '%' + mode.substring(8) + '%'});
 
       emptyMsg = "";
@@ -984,7 +949,7 @@ initSqlJs(config).then(function(SQL){
         }
       }
 
-      if (self.mode == "PopUpVideo" && mode.startsWith('domain') && !isExactMatch) {
+      if (mode.startsWith('domain') && !isExactMatch) {
         isExactMatch = JSON.parse(event["content"])["name"].toLowerCase() == mode.substring(7).toLowerCase();
       }
 
@@ -1003,58 +968,54 @@ initSqlJs(config).then(function(SQL){
       if (shouldShowHeadings) {
         var article = document.createElement('div');
 
-        if (self.mode == "PopUpVideo") {
-          var ccStmt = db.prepare("SELECT COUNT(*) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid");
-          var pStmt = db.prepare("SELECT COUNT(DISTINCT pubkey) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid");
-          pStmt.bind({$id: event.id, $noteid: '%' + event.id + '%'});
+        var ccStmt = db.prepare("SELECT COUNT(*) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid");
+        var pStmt = db.prepare("SELECT COUNT(DISTINCT pubkey) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid");
+        pStmt.bind({$id: event.id, $noteid: '%' + event.id + '%'});
 
-          var isParticipantStmt = db.prepare("SELECT COUNT(*) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid AND pubkey = $pubkey");
-          isParticipantStmt.bind({$id: event.id, $noteid: '%' + event.id + '%', $pubkey: self.pubKey});
+        var isParticipantStmt = db.prepare("SELECT COUNT(*) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid AND pubkey = $pubkey");
+        isParticipantStmt.bind({$id: event.id, $noteid: '%' + event.id + '%', $pubkey: self.pubKey});
 
-          var isParticipant = false;
-          if (isParticipantStmt.step()) {var isParticipantCount = isParticipantStmt.getAsObject()["COUNT(*)"]}
-          var isParticipant = isParticipantCount > 0;
+        var isParticipant = false;
+        if (isParticipantStmt.step()) {var isParticipantCount = isParticipantStmt.getAsObject()["COUNT(*)"]}
+        var isParticipant = isParticipantCount > 0;
 
-          var isFavourite = row.favourite;
+        var isFavourite = row.favourite;
 
-          article.classList.add('toast');
+        article.classList.add('toast');
 
-          // We don't care when a room was created - instead, we're storing the last message's timestamp in there.
-          var isUnread = row.created_at > row.read_at;
+        // We don't care when a room was created - instead, we're storing the last message's timestamp in there.
+        var isUnread = row.created_at > row.read_at;
 
-          if (isUnread) {
-            article.classList.add('unread');
-          }
-
-          if (isParticipant) {
-            article.classList.add('participant');
-          }
-
-          if (isFavourite) {
-            article.classList.add('favourite')
-          }
-
-          var isCreator = (event.pubkey == self.pubKey);
-
-          if (isCreator) {
-            article.classList.add('creator');
-          }
-
-          // var lastUpdatedTimestamp = new Date(0);
-          // lastUpdatedTimestamp.setUTCSeconds(event.created_at);
-          // <span class="middot">&middot;</span> ${lastUpdatedTimestamp}
+        if (isUnread) {
+          article.classList.add('unread');
         }
+
+        if (isParticipant) {
+          article.classList.add('participant');
+        }
+
+        if (isFavourite) {
+          article.classList.add('favourite')
+        }
+
+        var isCreator = (event.pubkey == self.pubKey);
+
+        if (isCreator) {
+          article.classList.add('creator');
+        }
+
+        // var lastUpdatedTimestamp = new Date(0);
+        // lastUpdatedTimestamp.setUTCSeconds(event.created_at);
+        // <span class="middot">&middot;</span> ${lastUpdatedTimestamp}
         ccStmt.bind({$id: event.id, $noteid: '%' + event.id + '%'});
 
         if (ccStmt.step()) {var messagesCount = ccStmt.getAsObject()["COUNT(*)"]}
         var messagesString = '';
 
-        if (self.mode == "PopUpVideo") {
-          if (messagesCount != 1) {
-            messagesString = 'messages';
-          } else {
-            messagesString = 'message';
-          }
+        if (messagesCount != 1) {
+          messagesString = 'messages';
+        } else {
+          messagesString = 'message';
         }
 
         var favouriteIcon = '';
@@ -1077,18 +1038,16 @@ initSqlJs(config).then(function(SQL){
         var epochTimestamp = new Date(0);
         epochTimestamp.setUTCSeconds(event.created_at);
 
-        if (self.mode == "PopUpVideo") {
-          var roomName = 'Unknown';
+        var roomName = 'Unknown';
 
-          try {
-            roomName = JSON.parse(event.content)["name"];
-          } catch (e) {
-            roomName = event.content + ' *';
-          }
-          var innerHTML = `<a class="favourites">${favouriteIcon}</a> <h2><a class="title">${roomName}</a></h2>
-          <p><a class="messages"></a> <span class="middot">&middot;</span> <span class="participants">${participantsCount} ${participantsString}</span></p>
-          `
+        try {
+          roomName = JSON.parse(event.content)["name"];
+        } catch (e) {
+          roomName = event.content + ' *';
         }
+        var innerHTML = `<a class="favourites">${favouriteIcon}</a> <h2><a class="title">${roomName}</a></h2>
+        <p><a class="messages"></a> <span class="middot">&middot;</span> <span class="participants">${participantsCount} ${participantsString}</span></p>
+        `
         article.innerHTML = innerHTML;
         container.querySelector('.toasts').appendChild(article);
 
@@ -1118,12 +1077,10 @@ initSqlJs(config).then(function(SQL){
         messagesLink.href = '#' + self.NostrTools.nip19.noteEncode(event.id);
         messagesLink.dataset.id = self.NostrTools.nip19.noteEncode(event.id);
 
-        if (self.mode == "PopUpVideo") {
-          var titleLink = article.querySelector('a.title');
-          titleLink.onclick = messagesLink.onclick;
-          titleLink.href = '#' + self.NostrTools.nip19.noteEncode(event.id);
-          titleLink.dataset.id = self.NostrTools.nip19.noteEncode(event.id);
-        }
+        var titleLink = article.querySelector('a.title');
+        titleLink.onclick = messagesLink.onclick;
+        titleLink.href = '#' + self.NostrTools.nip19.noteEncode(event.id);
+        titleLink.dataset.id = self.NostrTools.nip19.noteEncode(event.id);
 
         try { // Toastr only
           var domainLink = article.querySelector('a.domain');
@@ -1187,17 +1144,13 @@ initSqlJs(config).then(function(SQL){
 
         // Add the parent post itself as a reference
         eTags.push(['e', event.id, '', marker, event.pubkey]);
-        if (self.mode == "Toastr") {
-          newNote(children, {eTags: eTags});
-        }
+        newNote(children, {eTags: eTags});
         drawToasts(container.querySelector('.toasts'), knownUsers, "messages-" + event.id);
 
         console.log('mode:' + container.querySelector('.toasts').children.length);
 
         var classFilter = '';
-        if (self.mode == "PopUpVideo") {
-          classFilter = '.note';
-        }
+        classFilter = '.note';
 
         if (!document.querySelector('.toasts ' + classFilter) && mode.startsWith('toast-')) {
           // Add text if there are currently no messages.
@@ -1250,10 +1203,10 @@ initSqlJs(config).then(function(SQL){
 
     try {
       container.querySelector('.toasts-loading').classList.remove("active");
-      if (showEmptyMessage || (self.mode == "PopUpVideo" && mode.startsWith('domain-') && !isExactMatch)) {
+      if (showEmptyMessage || (mode.startsWith('domain-') && !isExactMatch)) {
         var actionMsg = 'Create';
         // If a room similar to the one we were looking for exists, display the 'close match' message
-        // typeof closeMatchMsg !== 'undefined' is basically equivalent to (self.mode == "PopUpVideo" && mode.startsWith('domain-'))
+        // typeof closeMatchMsg !== 'undefined' is basically equivalent to (mode.startsWith('domain-'))
         if (typeof closeMatchMsg !== 'undefined' && !showEmptyMessage && !isExactMatch) {
           container.querySelector('.toasts-empty').innerHTML = closeMatchMsg;
           actionMsg = 'Create channel ' + mode.substring(7);
@@ -1265,13 +1218,11 @@ initSqlJs(config).then(function(SQL){
         }
 
         // Add a button to the empty message that opens the newToast UI
-        if (mode.startsWith('url-') || (self.mode == "PopUpVideo" && mode.startsWith('domain-'))) {
-          if (self.mode == "PopUpVideo") {
-            var newItem = `<form class="toast-new-form" autocomplete="off" action="">
-              <input type="hidden" name="url" value="${mode.substring(7)}" placeholder="Room or domain name" required="">
-              <button type="submit" class="toast-submit-button">${actionMsg}</button>
-            </form>`;
-          }
+        if (mode.startsWith('url-') || (mode.startsWith('domain-'))) {
+          var newItem = `<form class="toast-new-form" autocomplete="off" action="">
+            <input type="hidden" name="url" value="${mode.substring(7)}" placeholder="Room or domain name" required="">
+            <button type="submit" class="toast-submit-button">${actionMsg}</button>
+          </form>`;
 
           container.querySelector('.toasts-empty').innerHTML += '<br />' + newItem;
 
@@ -1310,9 +1261,7 @@ initSqlJs(config).then(function(SQL){
     }
 
     var submitText;
-    if (self.mode == "PopUpVideo") {
-      submitText = "Create";
-    }
+    submitText = "Create";
 
     const div = document.createElement('div');
     div.classList.add('toast-new');
@@ -1323,12 +1272,7 @@ initSqlJs(config).then(function(SQL){
         <div class="content">
           <form class="toast-new-form" autocomplete="off" action="">`
 
-          if (self.mode == "Toastr") { innerHTML += `
-            <input type="url" name="url" value="" placeholder="URL" required></input>
-            <input type="text" name="title" placeholder="Write a title..." required></input>
-          `} else if (self.mode == "PopUpVideo") { innerHTML += `
-            <input type="text" name="url" value="" placeholder="Room or domain name" required></input>
-          `}
+          innerHTML += `<input type="text" name="url" value="" placeholder="Room or domain name" required></input>`
 
 innerHTML += `<button type="submit" class="toast-submit-button">${submitText}</button>
           </form>
