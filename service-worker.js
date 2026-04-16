@@ -37,7 +37,6 @@ function getRelays() {
   } else {
     relays = relays.concat(default_relays);
   }
-  //displayRelays(relays);
   return {relays: relays, debugging: overrideRelays};
 }
 
@@ -519,58 +518,6 @@ initSqlJs(config).then(function(SQL){
     )
   }
 
-  const searchBar = document.getElementById('search-bar');
-  self.searchResults = (searchValue) => {
-    var mode = '';
-    if (!searchValue || searchValue == "" || searchValue == "https://" || searchValue == "http://") {
-      mode = 'recent';
-    } else if ((searchValue.startsWith('https://') || searchValue.startsWith('http://')) && (searchValue.split("/").length - 1) > 2) {
-      // Pop Up Video only supports one chat room per domain, so URL-mode isn't a thing
-      if (searchValue.startsWith('https://')) {
-        searchValue = searchValue.substring(8, searchValue.length);
-      } else if (searchValue.startsWith('http://')) {
-        searchValue = searchValue.substring(7, searchValue.length);
-      }
-      searchValue = searchValue.split('/')[0]
-      mode = 'domain-' + searchValue;
-    } else if (searchValue.startsWith('npub')) {
-      mode = 'profile-' + searchValue;
-    } else if (searchValue.startsWith('note') || searchValue.startsWith('nevent')) {
-      mode = 'toast-' + searchValue;
-    } else {
-      if (searchValue.startsWith('https://')) {
-        searchValue = searchValue.substring(8, searchValue.length);
-      } else if (searchValue.startsWith('http://')) {
-        searchValue = searchValue.substring(7, searchValue.length);
-      }
-      mode = 'domain-' + searchValue;
-    }
-
-    document.querySelectorAll('#topbar nav .right > a.tab').forEach(l => {
-      l.classList.remove("active");
-    });
-
-    document.querySelector('#logoLink').classList.add("active")
-    document.querySelectorAll('#container article').forEach(l => {
-      l.style.display = 'none';
-    });
-    document.querySelector('#yak').style.display = 'block';
-    drawToasts(document.querySelector('.toasts-container'), self.users, mode);
-    self.lastDrawMode = mode;
-    modalInitialization();
-  };
-
-  var loadHome = function(event) {
-    event.preventDefault();
-    history.pushState({hash: ''}, "Home", '#' + '');
-    document.getElementById('search-bar').value = '';
-    searchResults(document.getElementById('search-bar').value);
-  }
-
-  document.querySelectorAll('a#logoLink, #backBtn').forEach(el => {
-    el.addEventListener('click', event => loadHome(event))
-  });
-
   var alertsLink = document.querySelector('a#alertsLink');
   alertsLink.onclick = function(event) {
     event.preventDefault();
@@ -583,28 +530,6 @@ initSqlJs(config).then(function(SQL){
     updateAlertsIndicator();
     syncDatabase();
   }
-
-  self.addEventListener('popstate', function(event) {
-    if (event.state) {
-      state = event.state;
-      document.title = state.title;
-      document.getElementById('search-bar').value = state.hash;
-      searchResults(document.getElementById('search-bar').value);
-    }
-  });
-
-  const debounce = (fn, delay = 1000) => {
-    let timerId = null;
-    return (...args) => {
-      clearTimeout(timerId);
-      timerId = setTimeout(() => fn(...args), delay);
-    };
-  };
-
-  const onInput = debounce(searchResults, 500);
-  searchBar.addEventListener("input", (e) => {
-    onInput(e.target.value);
-  });
 
   function onlyUnique(value, index, array) {
     return array.indexOf(value) === index;
