@@ -1,5 +1,6 @@
 window.pubkey = null;
 window.privkey = null;
+window.users = [];
 
 async function writeClipboardText(text) {
   if (text === undefined) {
@@ -11,6 +12,56 @@ async function writeClipboardText(text) {
   } catch (error) {
     console.error(error.message);
   }
+}
+
+function updateProfileModal(event, pubKey) {
+  parent = document.querySelector('#modal-profile .profile');
+  parent.innerHTML = '';
+
+  var hasUsername = false;
+  var hasPicture = false;
+
+  if (window.users[pubKey] !== undefined) {
+    var profile = JSON.parse(window.users[pubKey].content);
+    if (profile.name !== undefined) {
+      document.querySelector('#modal-profile #modal-profile-title').innerHTML = profile.name;
+      hasUsername = true;
+    }
+    if (profile.displayName !== undefined) {
+      document.querySelector('#modal-profile #modal-profile-title').innerHTML = profile.displayName;
+      hasUsername = true;
+    }
+    if (profile.website !== undefined) {
+      const website = document.createElement('a');
+      website.innerHTML = profile.website;
+      website.href = profile.website;
+      website.classList.add('website');
+      parent.appendChild(website);
+    }
+    if (profile.about !== undefined) {
+      const about = document.createElement('p');
+      about.innerHTML = profile.about;
+      about.classList.add('about');
+      parent.appendChild(about);
+    }
+    if (profile.banner !== undefined) {
+      window.profile = profile;
+      document.querySelector('#modal-profile .banner').style.backgroundImage = "url('" + profile.banner + "')";
+    }
+    if (profile.picture !== undefined) {
+      document.querySelector('#modal-profile .avatar img').src = profile.picture;
+      hasPicture = true;
+    }
+  }
+  if (!hasPicture) {
+    document.querySelector('#modal-profile .avatar img').src = hashicon(pubKey).toDataURL();
+    document.querySelector('#modal-profile .avatar img').classList.add('hashicon');
+  }
+  if (!hasUsername) {
+    document.querySelector('#modal-profile #modal-profile-title').innerHTML = 'Unknown';
+  }
+
+  document.querySelector('#modal-profile .pubkey').innerHTML = window.NostrTools.nip19.npubEncode(pubKey);
 }
 
 function createProfilePopUp() {
@@ -219,6 +270,87 @@ function createAccountPopUp() {
     }
   }
 
+  function validateProfile(event) {
+    event.preventDefault();
+
+    var data = event.target.parentElement.parentElement;
+
+    if (data.checkValidity()) {
+      data.querySelector('#modal-account button[type="submit"]').disabled = false;
+    } else {
+      data.querySelector('#modal-account button[type="submit"]').disabled = true;
+    }
+  }
+
+  function updateProfile(event) {
+    if (event !== undefined) {
+      event.preventDefault();
+    }
+    var content = {};
+    var container = document.querySelector('#modal-account-content');
+    var name = container.querySelector('input[name="name"]').value;
+    var displayName = container.querySelector('input[name="display_name"]').value;
+    var website = container.querySelector('input[name="website"]').value;
+    var banner = container.querySelector('input[name="banner"]').value;
+    var picture = container.querySelector('input[name="picture"]').value;
+    var about = container.querySelector('textarea[name="about"]').value;
+
+    if (name.length > 0) {content.name = name}
+    if (displayName.length > 0) {content.displayName = displayName}
+    if (website.length > 0) {content.website = website}
+    if (banner.length > 0) {content.banner = banner}
+    if (picture.length > 0) {content.picture = picture}
+    if (about.length > 0) {content.about = about}
+
+    var e = {
+      created_at: Math.floor(Date.now() / 1000),
+      kind: 0,
+      tags: [],
+      content: JSON.stringify(content)
+    }
+
+    // NIP07 unsupported
+    var event = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(window.privkey).data))
+    console.log("signed event without nip07: " + event);
+    uploadProfileEvent(event);
+  }
+
+  document.querySelectorAll('#profile .picture-upload-group > button[type="button"]').forEach(button => {
+    button.addEventListener("click", event => {
+      if (event.target.classList.contains('picture-upload')) {
+        document.querySelector('#profile .picture-upload-group .picture-upload').classList.add('active')
+        document.querySelector('#profile .picture-upload-group .picture-url').classList.remove('active')
+        document.querySelector('#profile .picture-upload-group .upload').classList.remove('hidden')
+        document.querySelector('#profile .picture-upload-group .url').classList.add('hidden')
+      } else {
+        document.querySelector('#profile .picture-upload-group .picture-url').classList.add('active')
+        document.querySelector('#profile .picture-upload-group .picture-upload').classList.remove('active')
+        document.querySelector('#profile .picture-upload-group .url').classList.remove('hidden')
+        document.querySelector('#profile .picture-upload-group .upload').classList.add('hidden')
+      }
+    });
+  });
+
+  document.querySelectorAll('#profile .banner-upload-group > button[type="button"]').forEach(button => {
+    button.addEventListener("click", event => {
+      if (event.target.classList.contains('banner-upload')) {
+        document.querySelector('#modal-account .banner-upload-group .banner-upload').classList.add('active')
+        document.querySelector('#modal-account .banner-upload-group .banner-url').classList.remove('active')
+        document.querySelector('#modal-account .banner-upload-group .upload').classList.remove('hidden')
+        document.querySelector('#modal-account .banner-upload-group .url').classList.add('hidden')
+      } else {
+        document.querySelector('#modal-account .banner-upload-group .banner-url').classList.add('active')
+        document.querySelector('#modal-account .banner-upload-group .banner-upload').classList.remove('active')
+        document.querySelector('#modal-account .banner-upload-group .url').classList.remove('hidden')
+        document.querySelector('#modal-account .banner-upload-group .upload').classList.add('hidden')
+      }
+    });
+  });
+
+  document.querySelectorAll("#modal-account form input, #modal-account form textarea").forEach(i => {
+    i.addEventListener('keyup', (e) => validateProfile(e));
+  });
+
   document.querySelector('#keys .edit').addEventListener('click', editKeys);
   document.querySelector('#keys .cancel').addEventListener('click', cancelUpdateKeys);
   document.querySelector('#keys .update').addEventListener('click', updateKeys);
@@ -290,12 +422,6 @@ waitForEl("#movie_player").then(() => {
   });
 });
 
-var formInputs = document.querySelectorAll("#modal-account form input, #modal-account form textarea");
-
-formInputs.forEach(i => {
-  i.addEventListener('keyup', (e) => validateProfile(e));
-});
-
 function displayProfile(pubKey) {
   if (pubKey !== undefined) {
     window.pubKey = pubKey;
@@ -340,38 +466,6 @@ function displayProfile(pubKey) {
     }
   }
 }
-
-document.querySelectorAll('#profile .picture-upload-group > button[type="button"]').forEach(button => {
-  button.addEventListener("click", event => {
-    if (event.target.classList.contains('picture-upload')) {
-      document.querySelector('#profile .picture-upload-group .picture-upload').classList.add('active')
-      document.querySelector('#profile .picture-upload-group .picture-url').classList.remove('active')
-      document.querySelector('#profile .picture-upload-group .upload').classList.remove('hidden')
-      document.querySelector('#profile .picture-upload-group .url').classList.add('hidden')
-    } else {
-      document.querySelector('#profile .picture-upload-group .picture-url').classList.add('active')
-      document.querySelector('#profile .picture-upload-group .picture-upload').classList.remove('active')
-      document.querySelector('#profile .picture-upload-group .url').classList.remove('hidden')
-      document.querySelector('#profile .picture-upload-group .upload').classList.add('hidden')
-    }
-  });
-});
-
-document.querySelectorAll('#profile .banner-upload-group > button[type="button"]').forEach(button => {
-  button.addEventListener("click", event => {
-    if (event.target.classList.contains('banner-upload')) {
-      document.querySelector('#modal-account .banner-upload-group .banner-upload').classList.add('active')
-      document.querySelector('#modal-account .banner-upload-group .banner-url').classList.remove('active')
-      document.querySelector('#modal-account .banner-upload-group .upload').classList.remove('hidden')
-      document.querySelector('#modal-account .banner-upload-group .url').classList.add('hidden')
-    } else {
-      document.querySelector('#modal-account .banner-upload-group .banner-url').classList.add('active')
-      document.querySelector('#modal-account .banner-upload-group .banner-upload').classList.remove('active')
-      document.querySelector('#modal-account .banner-upload-group .url').classList.remove('hidden')
-      document.querySelector('#modal-account .banner-upload-group .upload').classList.add('hidden')
-    }
-  });
-});
 
 async function sha256FromBlob(blob) {
   const buffer = await blob.arrayBuffer();
@@ -428,39 +522,6 @@ const signNoteForFileUpload = async(files, message, kind, urlBox) => {
   });
 };
 
-function updateProfile(event) {
-  if (event !== undefined) {
-    event.preventDefault();
-  }
-  var content = {};
-  var container = document.querySelector('#modal-account-content');
-  var name = container.querySelector('input[name="name"]').value;
-  var displayName = container.querySelector('input[name="display_name"]').value;
-  var website = container.querySelector('input[name="website"]').value;
-  var banner = container.querySelector('input[name="banner"]').value;
-  var picture = container.querySelector('input[name="picture"]').value;
-  var about = container.querySelector('textarea[name="about"]').value;
-
-  if (name.length > 0) {content.name = name}
-  if (displayName.length > 0) {content.displayName = displayName}
-  if (website.length > 0) {content.website = website}
-  if (banner.length > 0) {content.banner = banner}
-  if (picture.length > 0) {content.picture = picture}
-  if (about.length > 0) {content.about = about}
-
-  var e = {
-    created_at: Math.floor(Date.now() / 1000),
-    kind: 0,
-    tags: [],
-    content: JSON.stringify(content)
-  }
-
-  // NIP07 unsupported
-  var event = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(window.privkey).data))
-  console.log("signed event without nip07: " + event);
-  uploadProfileEvent(event);
-}
-
 function uploadProfileEvent(note) {
   console.log("Sending " + JSON.stringify(note));
   Promise.any(window.pool.publish(relays, note)).then(relay => {
@@ -468,16 +529,4 @@ function uploadProfileEvent(note) {
     window.importToast(note, window.hasFinishedLoading);
     MicroModal.close('modal-account');
   });
-}
-
-function validateProfile(event) {
-  event.preventDefault();
-
-  var data = event.target.parentElement.parentElement;
-
-  if (data.checkValidity()) {
-    data.querySelector('#modal-account button[type="submit"]').disabled = false;
-  } else {
-    data.querySelector('#modal-account button[type="submit"]').disabled = true;
-  }
 }

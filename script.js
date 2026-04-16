@@ -441,77 +441,11 @@ function displayToast(parent, data, note, params) {
   parent.appendChild(div)
 }
 
-document.querySelectorAll('#topbar nav .right > a.tab').forEach(link => {
-  link.addEventListener("click", (e) => {
-    var num = Array.from(document.querySelectorAll("#topbar nav .right > a.tab")).indexOf(e.currentTarget);
-    document.querySelectorAll('#topbar nav .right > a.tab').forEach(l => {
-      l.classList.remove("active");
-    });
-    e.currentTarget.classList.add("active")
-    document.querySelectorAll('#container article').forEach(l => {
-      l.style.display = 'none';
-    });
-    document.querySelectorAll('#container article')[num + 2].style.display = 'block';
-    document.getElementById('search-bar').value = '';
-    return false;
-  });
-});
-
 function randomBytes(bytesLength = 32) {
   if (crypto && typeof crypto.getRandomValues === "function") {
     return crypto.getRandomValues(new Uint8Array(bytesLength));
   }
   throw new Error("crypto.getRandomValues must be defined");
-}
-
-function updateProfileModal(event, pubKey) {
-  parent = document.querySelector('#modal-profile .profile');
-  parent.innerHTML = '';
-
-  var hasUsername = false;
-  var hasPicture = false;
-
-  if (window.users[pubKey] !== undefined) {
-    var profile = JSON.parse(window.users[pubKey].content);
-    if (profile.name !== undefined) {
-      document.querySelector('#modal-profile #modal-profile-title').innerHTML = profile.name;
-      hasUsername = true;
-    }
-    if (profile.displayName !== undefined) {
-      document.querySelector('#modal-profile #modal-profile-title').innerHTML = profile.displayName;
-      hasUsername = true;
-    }
-    if (profile.website !== undefined) {
-      const website = document.createElement('a');
-      website.innerHTML = profile.website;
-      website.href = profile.website;
-      website.classList.add('website');
-      parent.appendChild(website);
-    }
-    if (profile.about !== undefined) {
-      const about = document.createElement('p');
-      about.innerHTML = profile.about;
-      about.classList.add('about');
-      parent.appendChild(about);
-    }
-    if (profile.banner !== undefined) {
-      window.profile = profile;
-      document.querySelector('#modal-profile .banner').style.backgroundImage = "url('" + profile.banner + "')";
-    }
-    if (profile.picture !== undefined) {
-      document.querySelector('#modal-profile .avatar img').src = profile.picture;
-      hasPicture = true;
-    }
-  }
-  if (!hasPicture) {
-    document.querySelector('#modal-profile .avatar img').src = hashicon(pubKey).toDataURL();
-    document.querySelector('#modal-profile .avatar img').classList.add('hashicon');
-  }
-  if (!hasUsername) {
-    document.querySelector('#modal-profile #modal-profile-title').innerHTML = 'Unknown';
-  }
-
-  document.querySelector('#modal-profile .pubkey').innerHTML = window.NostrTools.nip19.npubEncode(pubKey);
 }
 
 MicroModal.init({
