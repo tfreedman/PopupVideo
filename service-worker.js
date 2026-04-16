@@ -1,9 +1,10 @@
 self.mode = "PopUpVideo";
 
 var storage = browser.storage; // Add chrome support later
+var version = 0; // The version of this script
 
 var _privkey;
-var _settings;
+var _settings = 0;
 var _version;
 var _database;
 
@@ -19,15 +20,36 @@ const readLocalStorage = async (key) => {
   });
 };
 
-var pubkey;
+var pubKey;
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
-    sendResponse({private: _privkey, public: self.pubkey});
+    sendResponse({private: _privkey, public: self.pubKey});
   } else if (message.action === "getRelays") {
     sendResponse(getRelays());
+  } else if (message.action === "getUsers") {
+    sendResponse(self.users);
   }
 });
+
+
+var users = {};
+self.settings = 0;
+self.hasFinishedLoading = false;
+self.db = null;
+
+self.pool = null;
+self.isConnected = false;
+
+function toggleConnectionState(state) {
+  if (state && self.isConnected !== true) {
+    self.isConnected = true;
+    console.log('Connected to Nostr!');
+  } else if (!state && self.isConnected !== false) {
+    self.isConnected = false;
+    console.log('Disconnected from Nostr');
+  }
+}
 
 function getRelays() {
   var default_relays = ["wss://relay.toastr.net", "wss://purplepag.es", "wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net"];
@@ -69,14 +91,6 @@ async function readDBToVariables() {
 }
 readDBToVariables();
 
-var users = {};
-self.pool = null;
-self.version = 6;
-self.settings = 0;
-self.hasFinishedLoading = false;
-self.isConnected = false;
-self.db = null;
-
 var pubKey;
 var snd = new Audio("/pop.mp3");
 self.lastDrawMode = null;
@@ -87,7 +101,7 @@ config = {
 
 function syncDatabase() {
   var dbstr = toBinString(self.db.export());
-  storage.local.set({sqlite: dbstr});
+  storage.local.set({database: dbstr});
 }
 
 function exportSettings() {
@@ -383,7 +397,7 @@ initSqlJs(config).then(function(SQL){
   }
 
   var dbstr = toBinString(db.export());
-  storage.local.set({sqlite: dbstr});
+  storage.local.set({database: dbstr});
   storage.local.set({version: self.version});
   storage.local.set({settings: JSON.stringify(0)});
 
@@ -399,37 +413,34 @@ initSqlJs(config).then(function(SQL){
   if (sk === null) {
     _privkey = self.NostrTools.nip19.nsecEncode(self.NostrTools.generateSecretKey());
     storage.local.set({privkey: _privkey});
-    sk = Uint8Array.from(self.NostrTools.nip19.decode(_privkey).data);
-  } else {
-    sk = Uint8Array.from(self.NostrTools.nip19.decode(_privkey).data);
   }
-
+  sk = Uint8Array.from(self.NostrTools.nip19.decode(_privkey).data);
   self.pubkey = self.NostrTools.getPublicKey(sk);
-
   self.pool = new self.NostrTools.SimplePool({enableReconnect: true, enablePing: true})
-
-  self.relays = getRelays();
-
+  self.relays = getRelays().relays;
   var dirty = false;
-  // document.querySelector('#keys input[name="privkey"]').disabled = true; FIXME
 
   if (pk) {
     //displayProfile(pk); #FIXME
   }
 
-  return; // FIXME
-
   var filter;
   var kind;
-  kind = 1;
-  filter = {kinds: [kind], '#t': ["popupvideo"], since: 1750046400}
+  kind = 40;
+  filter = {kinds: [kind], '#t': ["yakclub", "trollbox"], since: 1750046400}
+
+  console.log('ohai');
+  console.log(self.relays);
+  console.log(filter);
+  console.log(self.pool);
 
   var h = self.pool.subscribeMany(
-    relays,[
+    self.relays,[
       filter
     ],
     {
       onevent(event) {
+        console.log('hello!');
         toggleConnectionState(true);
         if (event && event.pubkey && event.content && event.kind == 40 && self.NostrTools.verifyEvent(event, event.pubkey) && event.created_at > 1750046400) {
           importToast(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
@@ -454,7 +465,7 @@ initSqlJs(config).then(function(SQL){
 
     var stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 40");
     kind = 42; // children of channel messages are actually kind 42
-    var obj = document.querySelector('#yak');
+    //var obj = document.querySelector('#yak');
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);
@@ -465,7 +476,7 @@ initSqlJs(config).then(function(SQL){
     console.log('filters: '+ filters.toString());
 
     var h = self.pool.subscribeMany(
-      relays, filters,
+      self.relays, filters,
       {
         onevent(event) {
           toggleConnectionState(true);
@@ -473,36 +484,19 @@ initSqlJs(config).then(function(SQL){
             importNote(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
 
             if (self.hasFinishedLoading) { // Trigger a redraw if this is after the initial load...
-              if (document.getElementById('search-bar').value == "") { // If yes
-                drawToasts(document.querySelector('.toasts-container'), self.users, "recent");
-                self.lastDrawMode = "recent";
-              } else { // If no.
-                // Only redraw rooms we're actually in if a new message comes in - otherwise, just ignore it.
-                var weShouldRedraw = false;
-                if (document.getElementById('search-bar').value.startsWith('note')) {
-                  var activeRoom = self.NostrTools.nip19.decode(document.getElementById('search-bar').value).data;
+              // Only redraw rooms we're actually in if a new message comes in - otherwise, just ignore it.
+              var weShouldRedraw = false;
+              if (document.getElementById('search-bar').value.startsWith('note')) {
+                var activeRoom = self.NostrTools.nip19.decode(document.getElementById('search-bar').value).data;
 
-                  event["tags"].forEach((tag) => {
-                    if (tag[0] == "e" && tag[3] && tag[3] == 'root' && tag[1] == activeRoom) {
-                      weShouldRedraw = true;
-                    }
-                  });
-                }
+               event["tags"].forEach((tag) => {
+                  if (tag[0] == "e" && tag[3] && tag[3] == 'root' && tag[1] == activeRoom) {
+                    weShouldRedraw = true;
+                  }
+                });
+              }
 
-                if (weShouldRedraw) {
-                  var shouldScroll = false;
-                  // If the user is at the bottom of the page, we should scroll down again if a new message is received.
-                  if (obj.scrollTop === (obj.scrollHeight - obj.offsetHeight)) {
-                    shouldScroll = true;
-                  }
-                  if (event.pubkey != pubKey) {
-                    snd.play(); // play sounds, but only if you didn't send the message
-                  }
-                  searchResults(document.getElementById('search-bar').value);
-                  if (shouldScroll) {
-                    document.querySelector('#container').scrollTo({left: 0, top: document.querySelector('#container').scrollHeight});
-                  }
-                }
+              if (weShouldRedraw) {
               }
             }
           }
@@ -518,7 +512,7 @@ initSqlJs(config).then(function(SQL){
     )
   }
 
-  var alertsLink = document.querySelector('a#alertsLink');
+  /* var alertsLink = document.querySelector('a#alertsLink');
   alertsLink.onclick = function(event) {
     event.preventDefault();
 
@@ -529,7 +523,7 @@ initSqlJs(config).then(function(SQL){
 
     updateAlertsIndicator();
     syncDatabase();
-  }
+  } FIXME */
 
   function onlyUnique(value, index, array) {
     return array.indexOf(value) === index;
@@ -606,7 +600,7 @@ initSqlJs(config).then(function(SQL){
 
 
     var h = self.pool.subscribeMany(
-      relays,[
+      self.relays,[
         {kinds: [0], authors: userPubkeys}
       ],
       {

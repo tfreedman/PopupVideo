@@ -1,10 +1,5 @@
 window.mode = "PopUpVideo";
 var users = {};
-window.pool = null;
-window.version = 6;
-window.settings = 0;
-window.hasFinishedLoading = false;
-window.isConnected = false;
 var pubKey;
 var snd = new Audio("/pop.mp3");
 window.lastDrawMode = null;
@@ -13,15 +8,6 @@ tippy('.right > a, #search', {
   content: (reference) => reference.dataset.tippy
 });
 
-function toggleConnectionState(state) {
-  if (state && window.isConnected !== true) {
-    window.isConnected = true;
-    console.log('Connected to Nostr!');
-  } else if (!state && window.isConnected !== false) {
-    window.isConnected = false;
-    console.log('Disconnected from Nostr');
-  }
-}
 
 function getReplyAuthor(elem) {
   do elem = elem.previousElementSibling;

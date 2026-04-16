@@ -1,6 +1,6 @@
 window.pubkey = null;
 window.privkey = null;
-window.users = [];
+window.users = {};
 
 async function writeClipboardText(text) {
   if (text === undefined) {
@@ -413,12 +413,17 @@ waitForEl("#movie_player").then(() => {
     window.privkey = response.privkey;
     window.pubkey = response.pubkey;
     document.querySelector('#keys input[name="privkey"]').value = window.privkey;
+    document.querySelector('#keys input[name="privkey"]').disabled = true;
     displayProfile(window.pubkey);
   });
 
   browser.runtime.sendMessage({ action: "getRelays" }, response => {
     window.relays = response.relays;
     displayRelays(response.relays, response.debugging);
+  });
+
+  browser.runtime.sendMessage({ action: "getUsers" }, response => {
+    window.users = response.users;
   });
 });
 
