@@ -19,9 +19,11 @@ const readLocalStorage = async (key) => {
   });
 };
 
+var pubkey;
+
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
-    sendResponse({message: 'foo', private: self.NostrTools.nip19.decode(_privkey).data, public: self.pubKey});
+    sendResponse({private: _privkey, public: self.pubkey});
   } else if (message.action === "getRelays") {
     sendResponse(getRelays());
   }
@@ -396,15 +398,13 @@ initSqlJs(config).then(function(SQL){
 
   if (sk === null) {
     _privkey = self.NostrTools.nip19.nsecEncode(self.NostrTools.generateSecretKey());
-    //document.querySelector('#keys input[name="privkey"]').value = _privkey; FIXME
     storage.local.set({privkey: _privkey});
     sk = Uint8Array.from(self.NostrTools.nip19.decode(_privkey).data);
-    pk = self.NostrTools.getPublicKey(sk);
   } else {
     sk = Uint8Array.from(self.NostrTools.nip19.decode(_privkey).data);
-    //document.querySelector('#keys input[name="privkey"]').value = _privkey; FIXME
-    pk = self.NostrTools.getPublicKey(sk);
   }
+
+  self.pubkey = self.NostrTools.getPublicKey(sk);
 
   self.pool = new self.NostrTools.SimplePool({enableReconnect: true, enablePing: true})
 
