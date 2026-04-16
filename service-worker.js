@@ -429,11 +429,6 @@ initSqlJs(config).then(function(SQL){
   kind = 40;
   filter = {kinds: [kind], '#t': ["yakclub", "trollbox"], since: 1750046400}
 
-  console.log('ohai');
-  console.log(self.relays);
-  console.log(filter);
-  console.log(self.pool);
-
   var h = self.pool.subscribeMany(
     self.relays,[
       filter
@@ -465,7 +460,6 @@ initSqlJs(config).then(function(SQL){
 
     var stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 40");
     kind = 42; // children of channel messages are actually kind 42
-    //var obj = document.querySelector('#yak');
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);
@@ -619,25 +613,6 @@ initSqlJs(config).then(function(SQL){
           if (!self.hasFinishedLoading) {
             if (!self.browserExtension) {
               updateAlertsIndicator(); // If there are new alerts, update the UI to show them
-              document.querySelectorAll('.post-boot').forEach((i) => {
-                i.classList.remove('post-boot');
-              });
-
-              // Draw the new toast UI
-              newToast(document.querySelector('#newToastContainer'), {url: ''});
-
-              // Ready to draw page contents - has someone attempted a search (via the URL slug) ?
-              if (self.location.hash) {
-                document.getElementById('search-bar').value = self.location.hash.substring(1, self.location.hash.length)
-              } else {
-                // Fragment doesn't exist
-              }
-
-              if (document.getElementById('search-bar').value == "") { // If yes
-                searchResults(document.getElementById('search-bar').value);
-              } else { // If no.
-                searchResults(document.getElementById('search-bar').value);
-              }
             }
             self.hasFinishedLoading = true;
           }
