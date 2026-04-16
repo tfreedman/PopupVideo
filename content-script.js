@@ -231,3 +231,247 @@ waitForEl("#movie_player").then(() => {
     displayRelays(response.relays, response.debugging);
   });
 });
+
+var formInputs = document.querySelectorAll("#profile form input, #profile form textarea");
+
+formInputs.forEach(i => {
+  i.addEventListener('keyup', (e) => validateProfile(e));
+});
+
+function editKeys() {
+  document.querySelector('#keys .edit-container').style.display = 'none'
+  document.querySelector('#keys .submit-container').style.display = 'block';
+  document.querySelector('#keys input[name="privkey"]').disabled = false;
+}
+
+function cancelUpdateKeys() {
+  sk = Uint8Array.from(window.NostrTools.nip19.decode(storage.local.get('privkey')).data);
+  document.querySelector('#keys input[name="privkey"]').value = storage.local.get('privkey');
+  document.querySelector('#keys input[name="privkey"]').disabled = true;
+  document.querySelector('#keys .edit-container').style.display = 'block'
+  document.querySelector('#keys .submit-container').style.display = 'none';
+}
+
+function updateKeys() {
+  try { // Basic validation - if we can generate an npub from the input, it's a valid key
+    if (window.NostrTools.nip19.decode(document.querySelector('#keys input[name="privkey"]').value).data) {
+      storage.local.set("privkey", document.querySelector('#keys input[name="privkey"]').value);
+      storage.local.set("version", 0); // This will mismatch with the existing DB version, causing it to be blown away on reload
+      document.querySelector('#keys .edit-container').style.display = 'block'
+      document.querySelector('#keys .submit-container').style.display = 'none';
+      window.location.reload();
+    }
+  } catch (e) {
+    alert('Invalid nsec');
+  }
+}
+
+document.querySelector('#keys .edit').addEventListener('click', editKeys);
+document.querySelector('#keys .cancel').addEventListener('click', cancelUpdateKeys);
+document.querySelector('#keys .update').addEventListener('click', updateKeys);
+
+function displayProfile(pubKey) {
+  if (pubKey !== undefined) {
+    window.pubKey = pubKey;
+    document.querySelector('#keys input[name="pubkey"]').value = pubKey;
+    document.querySelector('#keys input[name="pubkey"]').disabled = true;
+    document.querySelector('#keys input[name="npub"]').value = window.NostrTools.nip19.npubEncode(pubKey);
+    document.querySelector('#keys input[name="npub"]').disabled = true;
+
+    document.querySelector('#profile button[type="submit"]').addEventListener('click', updateProfile);
+
+    if (window.users[pubKey] !== undefined) {
+      console.log("There's profile data!");
+      var profile = JSON.parse(window.users[pubKey].content);
+      if (profile.name !== undefined) {
+        document.querySelector('#profile input[name="name"]').value = profile.name;
+      }
+      if (profile.displayName !== undefined) {
+        document.querySelector('#profile input[name="display_name"]').value = profile.displayName;
+      }
+      if (profile.website !== undefined) {
+        document.querySelector('#profile input[name="website"]').value = profile.website;
+      }
+      if (profile.about !== undefined) {
+        document.querySelector('#profile textarea[name="about"]').value = profile.about;
+      }
+      if (profile.banner !== undefined) {
+        document.querySelector('#profile input[name="banner"]').value = profile.banner;
+      }
+      if (profile.picture !== undefined) {
+        document.querySelector('#profile input[name="picture"]').value = profile.picture;
+        if (document.querySelector('#profile input[name="picture"]').value !== "") {
+          document.querySelector('#profile .avatar').src = document.querySelector('#profile input[name="picture"]').value
+          document.querySelector('#topbar nav .avatar').src = document.querySelector('#profile input[name="picture"]').value
+        } else {
+          document.querySelector('#profile .avatar').src = 'circle-user.svg'
+          document.querySelector('#topbar nav .avatar').src = 'circle-user.svg'
+        }
+      }
+      console.log(users[pubKey]);
+    } else {
+      console.log("No profile data :(");
+    }
+  }
+}
+
+document.querySelectorAll('#profile .picture-upload-group > button[type="button"]').forEach(button => {
+  button.addEventListener("click", event => {
+    if (event.target.classList.contains('picture-upload')) {
+      document.querySelector('#profile .picture-upload-group .picture-upload').classList.add('active')
+      document.querySelector('#profile .picture-upload-group .picture-url').classList.remove('active')
+      document.querySelector('#profile .picture-upload-group .upload').classList.remove('hidden')
+      document.querySelector('#profile .picture-upload-group .url').classList.add('hidden')
+    } else {
+      document.querySelector('#profile .picture-upload-group .picture-url').classList.add('active')
+      document.querySelector('#profile .picture-upload-group .picture-upload').classList.remove('active')
+      document.querySelector('#profile .picture-upload-group .url').classList.remove('hidden')
+      document.querySelector('#profile .picture-upload-group .upload').classList.add('hidden')
+    }
+  });
+});
+
+document.querySelectorAll('#profile .banner-upload-group > button[type="button"]').forEach(button => {
+  button.addEventListener("click", event => {
+    if (event.target.classList.contains('banner-upload')) {
+      document.querySelector('#profile .banner-upload-group .banner-upload').classList.add('active')
+      document.querySelector('#profile .banner-upload-group .banner-url').classList.remove('active')
+      document.querySelector('#profile .banner-upload-group .upload').classList.remove('hidden')
+      document.querySelector('#profile .banner-upload-group .url').classList.add('hidden')
+    } else {
+      document.querySelector('#profile .banner-upload-group .banner-url').classList.add('active')
+      document.querySelector('#profile .banner-upload-group .banner-upload').classList.remove('active')
+      document.querySelector('#profile .banner-upload-group .url').classList.remove('hidden')
+      document.querySelector('#profile .banner-upload-group .upload').classList.add('hidden')
+    }
+  });
+});
+
+document.querySelector('#profile .picture-upload-group input[type="file"]').addEventListener('change', (e) => {
+  const files = document.querySelector('#profile .picture-upload-group input[type="file"]').files;
+  const message = document.querySelector('#profile .picture-upload-group .picture-message');
+  const urlBox = document.querySelector('#profile .picture-upload-group input[name="picture"]');
+
+  if (files.length > 0) {
+    signNoteForFileUpload(files, message, 'avatar', urlBox);
+  }
+});
+
+document.querySelector('#profile .banner-upload-group input[type="file"]').addEventListener('change', (e) => {
+  const files = document.querySelector('#profile .banner-upload-group input[type="file"]').files;
+  const message = document.querySelector('#profile .banner-upload-group .banner-message');
+  const urlBox = document.querySelector('#profile .banner-upload-group input[name="banner"]');
+
+  if (files.length > 0) {
+    signNoteForFileUpload(files, message, 'banner', urlBox);
+  }
+});
+
+async function sha256FromBlob(blob) {
+  const buffer = await blob.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function uploadFile(formData, message, urlBox, note) {
+  try {
+    message.classList.remove('error');
+    message.classList.remove('success');
+
+    const response = await fetch('https://nostr.tylerfreedman.com/api/upload', {
+      method: 'POST',
+      headers: {
+        "Authorization": "Nostr " + base64url_encode(note)
+      },
+      body: formData,
+    });
+
+    if (response.ok) {
+      let responseText = await response.text();
+      console.log('Received: ' + responseText);
+      urlBox.value = responseText;
+      message.textContent = ' ';
+      message.classList.add('success');
+    } else {
+      message.textContent = ' ';
+      message.classList.add('error');
+    }
+  } catch (error) {
+    message.textContent = 'An error occurred while uploading.';
+    message.className = 'message error';
+  }
+}
+
+const signNoteForFileUpload = async(files, message, kind, urlBox) => {
+  const formData = new FormData();
+  formData.append('file', files[0]);
+  formData.append('kind', kind);
+
+  var hash = sha256FromBlob(files[0]).then(hash => {
+    console.log('hash: ' + hash);
+    formData.append('X-SHA-256', hash);
+
+    var tags = [["t","upload"], ["expiration", (Math.floor(Date.now() / 1000) + 60).toString()], ["x", hash]];
+    var e = {created_at: Math.floor(Date.now() / 1000), kind: 24242, tags: tags, content: ""};
+
+    // NIP07 unsupported
+    var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(storage.local.get('privkey')).data));
+    console.log("signed note without nip07: " + JSON.stringify(note));
+    uploadFile(formData, message, urlBox, JSON.stringify(note));
+  });
+};
+
+function updateProfile(event) {
+  if (event !== undefined) {
+    event.preventDefault();
+  }
+  var content = {};
+  var container = document.querySelector('#profile');
+  var name = container.querySelector('input[name="name"]').value;
+  var displayName = container.querySelector('input[name="display_name"]').value;
+  var website = container.querySelector('input[name="website"]').value;
+  var banner = container.querySelector('input[name="banner"]').value;
+  var picture = container.querySelector('input[name="picture"]').value;
+  var about = container.querySelector('textarea[name="about"]').value;
+
+  if (name.length > 0) {content.name = name}
+  if (displayName.length > 0) {content.displayName = displayName}
+  if (website.length > 0) {content.website = website}
+  if (banner.length > 0) {content.banner = banner}
+  if (picture.length > 0) {content.picture = picture}
+  if (about.length > 0) {content.about = about}
+
+  var e = {
+    created_at: Math.floor(Date.now() / 1000),
+    kind: 0,
+    tags: [],
+    content: JSON.stringify(content)
+  }
+
+  // NIP07 unsupported
+  var event = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(storage.local.get('privkey')).data))
+  console.log("signed event without nip07: " + event);
+  uploadProfileEvent(event);
+}
+
+function uploadProfileEvent(note) {
+  console.log("Sending " + JSON.stringify(note));
+  Promise.any(window.pool.publish(relays, note)).then(relay => {
+    console.log("Uploaded kind 0 event")
+    window.importToast(note, window.hasFinishedLoading);
+    MicroModal.close('modal-account');
+  });
+}
+
+function validateProfile(event) {
+  event.preventDefault();
+
+  var data = event.target.parentElement.parentElement;
+
+  if (data.checkValidity()) {
+    data.querySelector('#profile button[type="submit"]').disabled = false;
+  } else {
+    data.querySelector('#profile button[type="submit"]').disabled = true;
+  }
+}
