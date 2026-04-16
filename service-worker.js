@@ -1,4 +1,73 @@
 self.mode = "PopUpVideo";
+
+var storage = browser.storage; // Add chrome support later
+
+var _privkey;
+var _settings;
+var _version;
+var _database;
+
+const readLocalStorage = async (key) => {
+  return new Promise((resolve, reject) => {
+    browser.storage.local.get([key], function (result) {
+      if (result[key] === undefined) {
+        reject();
+      } else {
+        resolve(result[key]);
+      }
+    });
+  });
+};
+
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "getNostrKeys") {
+    sendResponse({message: 'foo', private: self.NostrTools.nip19.decode(_privkey).data, public: self.pubKey});
+  } else if (message.action === "getRelays") {
+    sendResponse(getRelays());
+  }
+});
+
+function getRelays() {
+  var default_relays = ["wss://relay.toastr.net", "wss://purplepag.es", "wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net"];
+  var relays = [];
+  var overrideRelays = true;
+
+  if (overrideRelays) {
+    var relays = ["wss://toastr.tylerfreedman.com", "wss://purplepag.es"];
+  } else {
+    relays = relays.concat(default_relays);
+  }
+  //displayRelays(relays);
+  return {relays: relays, debugging: overrideRelays};
+}
+
+async function readDBToVariables() {
+  try {
+    _privkey = await readLocalStorage("privkey");
+  } catch(e) {
+    _privkey = null;
+  }
+
+  try {
+    _settings = await readLocalStorage("settings");
+  } catch(e) {
+    _settings = null;
+  }
+
+  try {
+    _version = await readLocalStorage("version");
+  } catch(e) {
+    _version = null;
+  }
+
+  try {
+    _database = await readLocalStorage("database");
+  } catch(e) {
+    _database = null;
+  }
+}
+readDBToVariables();
+
 var users = {};
 self.pool = null;
 self.version = 6;
@@ -11,19 +80,13 @@ var pubKey;
 var snd = new Audio("/pop.mp3");
 self.lastDrawMode = null;
 
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "hi") {
-    sendResponse({ message: "hello!" });
-  }
-});
-
 config = {
   locateFile: filename => `${filename}`
 }
 
 function syncDatabase() {
   var dbstr = toBinString(self.db.export());
-  storage.local.set(self.mode + ".sqlite", dbstr);
+  storage.local.set({sqlite: dbstr});
 }
 
 function exportSettings() {
@@ -56,10 +119,10 @@ function exportSettings() {
 
   console.log(JSON.stringify(settings));
   // NIP07 unsupported
-  var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(storage.local.get('privkey')).data, self.pubKey);
+  var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(_privkey).data, self.pubKey);
   var ciphertext = self.NostrTools.nip44.v2.encrypt(JSON.stringify(settings), convoKey, randomBytes(32));
   var e = {created_at: Math.floor(Date.now() / 1000), kind: 30078, tags: [['d', self.mode]], content: ciphertext};
-  var note = self.NostrTools.finalizeEvent(e, Uint8Array.from(self.NostrTools.nip19.decode(storage.local.get('privkey')).data))
+  var note = self.NostrTools.finalizeEvent(e, Uint8Array.from(self.NostrTools.nip19.decode(_privkey).data));
   console.log("signed note without nip07: " + note);
   uploadNote(null, note, null);
 }
@@ -109,7 +172,7 @@ function importSettings(note) {
 
   // We don't want to re-import the settings we just exported, so we make sure the app thinks
   // the current settings are newer by adding 1 to the timestamp
-  storage.local.set("settings", JSON.stringify(created_at + 1));
+  storage.local.set({settings: JSON.stringify(created_at + 1)});
   self.settings = note['created_at'] + 1;
 
   syncDatabase();
@@ -281,12 +344,12 @@ initSqlJs(config).then(function(SQL){
         }
         if (dirty) {
           // Parse the settings inside the note, and import them into the DB
-          if (value['created_at'] < JSON.parse(storage.local.get("settings"))) {
-            console.log('importing setting - time delta = ' + JSON.parse(storage.local.get("settings")) - value['created_at'])
+          if (value['created_at'] < JSON.parse(_settings)) {
+            console.log('importing setting - time delta = ' + JSON.parse(_settings) - value['created_at'])
 
             // Notes are encrypted using NIP-44. We need to first decrypt it, then parse it.
             // NIP07 unsupported
-            var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(storage.local.get('privkey')).data, self.pubKey);
+            var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(_privkey).data, self.pubKey);
             var plaintext = self.NostrTools.nip44.v2.decrypt(value['content'], convoKey);
             value['content'] = plaintext;
             importSettings(JSON.stringify(value));
@@ -303,8 +366,8 @@ initSqlJs(config).then(function(SQL){
     }
   }
 
-  var dbVersion = storage.local.get("version");
-  var dbstr = storage.local.get(self.mode + ".sqlite");
+  var dbVersion = _version;
+  var dbstr = _database;
 
   if (dbstr && dbVersion !== null && dbVersion == self.version) {
     console.log("Loading existing database - version numbers match");
@@ -319,9 +382,9 @@ initSqlJs(config).then(function(SQL){
   }
 
   var dbstr = toBinString(db.export());
-  storage.local.set(self.mode + ".sqlite", dbstr);
-  storage.local.set("version", self.version);
-  storage.local.set("settings", JSON.stringify(0));
+  storage.local.set({sqlite: dbstr});
+  storage.local.set({version: self.version});
+  storage.local.set({settings: JSON.stringify(0)});
 
   self.browserExtension = true;
 
@@ -329,34 +392,33 @@ initSqlJs(config).then(function(SQL){
   console.log("Cached Toasts: " + db.exec("SELECT COUNT(*) FROM toasts WHERE kind = 1")[0].values[0][0]);
 
   // Start Nostr connections
-  var sk = storage.local.get('privkey');
+  var sk = _privkey;
   var pk;
 
   if (sk === null) {
-    document.querySelector('#keys input[name="privkey"]').value = self.NostrTools.nip19.nsecEncode(self.NostrTools.generateSecretKey());
-    storage.local.set("privkey", document.querySelector('#keys input[name="privkey"]').value);
-    sk = Uint8Array.from(self.NostrTools.nip19.decode(storage.local.get('privkey')).data);
+    _privkey = self.NostrTools.nip19.nsecEncode(self.NostrTools.generateSecretKey());
+    //document.querySelector('#keys input[name="privkey"]').value = _privkey; FIXME
+    storage.local.set({privkey: _privkey});
+    sk = Uint8Array.from(self.NostrTools.nip19.decode(_privkey).data);
     pk = self.NostrTools.getPublicKey(sk);
   } else {
-    sk = Uint8Array.from(self.NostrTools.nip19.decode(storage.local.get('privkey')).data);
-    document.querySelector('#keys input[name="privkey"]').value = storage.local.get('privkey');
+    sk = Uint8Array.from(self.NostrTools.nip19.decode(_privkey).data);
+    //document.querySelector('#keys input[name="privkey"]').value = _privkey; FIXME
     pk = self.NostrTools.getPublicKey(sk);
   }
-
-  document.querySelector('#keys input[name="privkey"]').addEventListener("change", function() {
-    pk = self.NostrTools.getPublicKey(sk) // `pk` is a hex string
-  });
 
   self.pool = new self.NostrTools.SimplePool({enableReconnect: true, enablePing: true})
 
   self.relays = getRelays();
 
   var dirty = false;
-  document.querySelector('#keys input[name="privkey"]').disabled = true;
+  // document.querySelector('#keys input[name="privkey"]').disabled = true; FIXME
 
   if (pk) {
-    displayProfile(pk);
+    //displayProfile(pk); #FIXME
   }
+
+  return; // FIXME
 
   var filter;
   var kind;
