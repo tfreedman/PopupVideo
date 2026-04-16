@@ -10,6 +10,36 @@ async function writeClipboardText(text) {
   }
 }
 
+function createProfilePopUp() {
+  var div = document.createElement("div");
+  div.classList.add('modal');
+  div.classList.add('micromodal-slide');
+  div.id = "modal-profile";
+  div.ariaHidden = "true";
+  div.innerHTML = `
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-profile-title">
+        <header class="modal__header">
+          <div></div>
+          <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+        </header>
+        <main class="modal__content" id="modal-profile-content">
+          <div class="banner">
+            <div class="avatar">
+              <img src="" />
+            </div>
+          </div>
+          <h1 class="modal__title" id="modal-profile-title"></h1>
+          <p class="pubkey"></p>
+          <div class="profile">
+          </div>
+        </main>
+      </div>
+    </div>
+  `;
+  document.querySelector('body').appendChild(div);
+}
+
 function createAccountPopUp() {
   var div = document.createElement("div");
   div.classList.add('modal');
@@ -156,22 +186,10 @@ function waitForEl(el) {
   });
 }
 
-function getRelays() {
-  var default_relays = ["wss://relay.toastr.net", "wss://purplepag.es", "wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net"];
-  var relays = [];
-  var override_relays = true;
-
-  if (override_relays) {
-    var relays = ["wss://toastr.tylerfreedman.com", "wss://purplepag.es"];
+function displayRelays(relays, isDebuggingEnabled) {
+  if (isDebuggingEnabled === true) {
     document.querySelector('#modal-account #relays .message').innerHTML = 'Overriding relays for debugging purposes';
-  } else {
-    relays = relays.concat(default_relays);
   }
-  displayRelays(relays);
-  return relays;
-}
-
-function displayRelays(relays) {
   const div = document.createElement('div');
   relays.forEach((relay) => {
     div.innerHTML += `
@@ -194,7 +212,6 @@ waitForEl("#movie_player").then(() => {
 
 
   createAccountPopUp();
-  window.relays = getRelays();
 
   var account = document.createElement("a");
   account.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M463 448.2C440.9 409.8 399.4 384 352 384L288 384C240.6 384 199.1 409.8 177 448.2C212.2 487.4 263.2 512 320 512C376.8 512 427.8 487.3 463 448.2zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM320 336C359.8 336 392 303.8 392 264C392 224.2 359.8 192 320 192C280.2 192 248 224.2 248 264C248 303.8 280.2 336 320 336z"/></svg> Account</span>';
@@ -203,9 +220,14 @@ waitForEl("#movie_player").then(() => {
   document.querySelector('#center').appendChild(account);
 
   modalInitialization();
-});
 
-// Test code
-browser.runtime.sendMessage({ action: "getNostrKeys" }, response => {
-  console.log(response);
+  // Test code
+  browser.runtime.sendMessage({ action: "getNostrKeys" }, response => {
+    console.log(response);
+  });
+
+  browser.runtime.sendMessage({ action: "getRelays" }, response => {
+    window.relays = response.relays;
+    displayRelays(response.relays, response.debugging);
+  });
 });
