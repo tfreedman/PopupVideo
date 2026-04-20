@@ -21,6 +21,8 @@ const readLocalStorage = async (key) => {
 };
 
 var pubKey;
+var getPopUps = null;
+
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
@@ -437,7 +439,6 @@ initSqlJs(config).then(function(SQL){
     ],
     {
       onevent(event) {
-        console.log('hello!');
         toggleConnectionState(true);
         if (event && event.pubkey && event.content && event.kind == 40 && self.NostrTools.verifyEvent(event, event.pubkey) && event.created_at > 1750046400) {
           importToast(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
@@ -507,19 +508,6 @@ initSqlJs(config).then(function(SQL){
       }
     )
   }
-
-  /* var alertsLink = document.querySelector('a#alertsLink');
-  alertsLink.onclick = function(event) {
-    event.preventDefault();
-
-    // Draw first, then update the database to mark everything as read
-    drawToasts(document.querySelector('#alerts .toasts-container'), self.users, "alerts");
-
-    var stmt = self.db.exec("UPDATE alerts SET read = true WHERE read = false");
-
-    updateAlertsIndicator();
-    syncDatabase();
-  } FIXME */
 
   function onlyUnique(value, index, array) {
     return array.indexOf(value) === index;
@@ -626,7 +614,8 @@ initSqlJs(config).then(function(SQL){
     )
   }
 
-  function getPopUps() {
+  self.getPopUps = function() {
+    var popups = [];
     var users = {}
     var stmt = db.prepare("SELECT * FROM notes WHERE kind = 0");
     while(stmt.step()) {
@@ -635,42 +624,15 @@ initSqlJs(config).then(function(SQL){
       users[event.pubkey] = event;
     }
 
-    if (mode.slice(-1) == '#') {
-      mode = mode.substring(0, mode.length - 1);
-    }
-
-    var emptyMsg = '';
-    var showEmptyMessage = true;
-    var showFooter = false;
-    var showFilters = false;
-
-    if (mode.startsWith("domain-")) {
-      console.log("Filtering to domain name " + mode.substring(7));
-
-      stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND domain LIKE $domain ORDER BY created_at DESC");
-      emptyMsg = "Sorry, there are no channels named " + mode.substring(7);
-      var closeMatchMsg = "Not what you're looking for?";
-      var isExactMatch = false;
-
-      stmt.bind({$domain: '%' + mode.substring(7).toLowerCase() + '%'});
-
-    } else if (mode.startsWith("url-")) {
-      stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND url = $url ORDER BY created_at DESC");
-      console.log("Filtering to URL " + mode.substring(4));
-      stmt.bind({$url: mode.substring(4)});
-      emptyMsg = "Sorry, there are no toasts for URL " + mode.substring(4) + " - why not be the first to write one?";
-
-    }
+    //stmt = db.prepare("SELECT * FROM toasts WHERE kind = 42 AND url = $url ORDER BY created_at DESC");
+    stmt = db.prepare("SELECT * FROM toasts WHERE kind = 42 ORDER BY created_at DESC");
+    //stmt.bind({$url: mode.substring(4)});
 
     var row;
-
-    var lastPubkey = null;
-    var lastTimestamp = null;
 
     while(true) {
       if (stmt.step()) {
         row = stmt.getAsObject();
-        showEmptyMessage = false;
       } else {
         break;
       }
@@ -685,100 +647,21 @@ initSqlJs(config).then(function(SQL){
 
       var parent = '';
 
-      if (mode.startsWith("messages-")) {
-        // Copy all of the e Tags from the references in the parent post
-        event["tags"].forEach((tag) => {
-          if (tag[0] == "e" && tag[3] == "root") {
-            parent = tag[1];
-          }
-        });
-
-        if (parent != mode.substring(9)) {
-          continue; // Cancel rendering if the parent isn't actually an exact match.
+      // Copy all of the e Tags from the references in the parent post
+      event["tags"].forEach((tag) => {
+        if (tag[0] == "e") {
+          parent = tag[1];
         }
-      }
+      });
 
-      if (mode.startsWith("replies-")) {
-        // Copy all of the e Tags from the references in the parent post
-        event["tags"].forEach((tag) => {
-          if (tag[0] == "e") {
-            parent = tag[1];
-          }
-        });
-
-        if (parent != mode.substring(8)) {
-          continue; // Cancel rendering if the parent isn't actually an exact match.
-        }
+      //if (parent != mode.substring(8)) {
+      if (false) {
+        continue; // Cancel rendering if the parent isn't actually an exact match.
       }
-
-      if (mode.startsWith('domain') && !isExactMatch) {
-        isExactMatch = JSON.parse(event["content"])["name"].toLowerCase() == mode.substring(7).toLowerCase();
-      }
-
-      var username = 'Unknown';
-      var avatarURL = null;
-      if (users[event.pubkey]) {
-        var user = JSON.parse(users[event.pubkey].content);
-        if (typeof user.picture !== 'undefined') {
-          avatarURL = user.picture;
-        }
-        if (typeof user.name !== 'undefined') {
-          username = user.name;
-        }
-      }
-
-      if (!shouldShowHeadings && !mode.startsWith("toast")) {
-        // TODO: populate this
-        var isReply = false;
-        var reply = {};
-        displayToast(container.querySelector('.toasts'), {username: username, pubkey: event.pubkey, message: event.content, avatarURL: avatarURL, isReply: isReply, reply: reply, created_at: event.created_at}, event, {lastPubkey: lastPubkey, lastTimestamp: lastTimestamp, users: users, mode: mode, read: alerts[event.id]});
-        lastPubkey = event.pubkey;
-        lastTimestamp = event.created_at;
-      }
+      popups.push(row);
     }
 
-    try {
-      container.querySelector('.toasts-loading').classList.remove("active");
-      if (showEmptyMessage || (mode.startsWith('domain-') && !isExactMatch)) {
-        var actionMsg = 'Create';
-        // If a room similar to the one we were looking for exists, display the 'close match' message
-        // typeof closeMatchMsg !== 'undefined' is basically equivalent to (mode.startsWith('domain-'))
-        if (typeof closeMatchMsg !== 'undefined' && !showEmptyMessage && !isExactMatch) {
-          container.querySelector('.toasts-empty').innerHTML = closeMatchMsg;
-          actionMsg = 'Create channel ' + mode.substring(7);
-        } else if (typeof closeMatchMsg !== 'undefined' && showEmptyMessage) {
-          container.querySelector('.toasts-empty').innerHTML = emptyMsg;
-          actionMsg = 'Create channel ' + mode.substring(7);
-        } else {
-          container.querySelector('.toasts-empty').innerHTML = emptyMsg;
-        }
-
-        // Add a button to the empty message that opens the newToast UI
-        if (mode.startsWith('url-') || (mode.startsWith('domain-'))) {
-          var newItem = `<form class="toast-new-form" autocomplete="off" action="">
-            <input type="hidden" name="url" value="${mode.substring(7)}" placeholder="Room or domain name" required="">
-            <button type="submit" class="toast-submit-button">${actionMsg}</button>
-          </form>`;
-
-          container.querySelector('.toasts-empty').innerHTML += '<br />' + newItem;
-
-          var emptyToast = container.querySelector('.toasts-empty')
-          emptyToast.addEventListener('submit', (e) => newNoteSubmit(e));
-
-          var emptyInput = container.querySelector('.toasts-empty input')
-          emptyInput.addEventListener('keydown', (e) => validateToast(e, 1));
-        }
-
-        container.querySelector('.toasts-empty').classList.add("active");
-      } else {
-        container.querySelector('.toasts-empty').innerHTML = '';
-        container.querySelector('.toasts-empty').classList.remove("active");
-      }
-      if (mode.startsWith('toast-') && self.lastDrawMode != mode) {
-        document.querySelector('#footer').innerHTML = ''; // remove old forms
-        newNote(document.querySelector('#footer'), {eTags: [['e', event.id, '', 'root', event.pubkey]], showButton: true});
-      }
-    } catch (e) {}
+    return popups;
   }
 
   // New Root Posts
