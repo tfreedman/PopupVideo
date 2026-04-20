@@ -1,5 +1,6 @@
 window.pubkey = null;
 window.privkey = null;
+window.npub = null;
 window.users = {};
 
 async function writeClipboardText(text) {
@@ -61,7 +62,7 @@ function updateProfileModal(event, pubKey) {
     document.querySelector('#modal-profile #modal-profile-title').innerHTML = 'Unknown';
   }
 
-  document.querySelector('#modal-profile .pubkey').innerHTML = window.NostrTools.nip19.npubEncode(pubKey);
+  document.querySelector('#modal-profile .pubkey').innerHTML = window.npub;
 }
 
 function createProfilePopUp() {
@@ -418,6 +419,7 @@ waitForEl("#movie_player").then(() => {
   browser.runtime.sendMessage({ action: "getNostrKeys" }, response => {
     window.privkey = response.privkey;
     window.pubkey = response.pubkey;
+    window.npub = response.npub;
     document.querySelector('#keys input[name="privkey"]').value = window.privkey;
     document.querySelector('#keys input[name="privkey"]').disabled = true;
     displayProfile(window.pubkey);
@@ -438,7 +440,7 @@ function displayProfile(pubKey) {
     window.pubKey = pubKey;
     document.querySelector('#keys input[name="pubkey"]').value = pubKey;
     document.querySelector('#keys input[name="pubkey"]').disabled = true;
-    document.querySelector('#keys input[name="npub"]').value = window.NostrTools.nip19.npubEncode(pubKey);
+    document.querySelector('#keys input[name="npub"]').value = window.npub;
     document.querySelector('#keys input[name="npub"]').disabled = true;
 
     document.querySelector('#modal-account-content button[type="submit"]').addEventListener('click', updateProfile);

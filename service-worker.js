@@ -24,7 +24,7 @@ var pubKey;
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
-    sendResponse({private: _privkey, public: self.pubKey});
+    sendResponse({private: _privkey, public: self.pubKey, npub: self.NostrTools.nip19.npubEncode(pubKey)});
   } else if (message.action === "getRelays") {
     sendResponse(getRelays());
   } else if (message.action === "getUsers") {
