@@ -105,16 +105,10 @@ function createPopUpPopUp() {
     <div class="modal__overlay" tabindex="-1" data-micromodal-close>
       <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-popup-title">
         <header class="modal__header">
-          <div></div>
+          <div>PopUps</div>
           <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
         </header>
         <main class="modal__content" id="modal-popup-content">
-          <div class="banner">
-            <div class="avatar">
-              <img src="" />
-            </div>
-          </div>
-          <h1 class="modal__title" id="modal-popup-title"></h1>
         </main>
       </div>
     </div>
@@ -462,6 +456,10 @@ createPopUpPopUp();
     displayProfile(window.pubkey);
   });
 
+  browser.runtime.sendMessage({ action: "getPopUps" }, response => {
+    displayPopUps(response);
+  });
+
   browser.runtime.sendMessage({ action: "getRelays" }, response => {
     window.relays = response.relays;
     displayRelays(response.relays, response.debugging);
@@ -701,63 +699,12 @@ function uploadNote(data, note, parent) {
   });
 }
 
-//TODO: remove users
-function displayToast(parent, data, note, params) {
+function displayPopUp(response) {
   const div = document.createElement('div');
-
-  var root = null;
-  var hash = null;
-  var eTags = [];
-  var isReply = false;
-  var inReplyTo;
-  var marker;
-  note["tags"].forEach((tag) => {
-    if (tag[0] == "e") {
-      eTags.push(tag);
-      if (tag[3] && tag[3] == 'root') {
-        root = tag[1];
-        marker = 'reply'; // If there's a root e tag defined, mark it as a reply instead.
-      }
-      if (tag[3] && tag[3] == 'reply') {
-        inReplyTo = tag[1];
-        isReply = true;
-      }
-    }
-  });
-  if (note) {
-    eTags.push(['e', note.id, '', marker, note.pubkey])
-  }
-
-  // When we render a note that happens to be a reply, we embed the context from the referenced note
-  // Only the last reply counts - if that note was also a reply, we ignore it.
-  if (isReply) {
-    stmt = window.db.prepare("SELECT * FROM notes WHERE id = $id");
-    stmt.bind({$id: inReplyTo});
-
-    var referencedNote;
-    while(true) {
-      if (stmt.step()) {
-        row = stmt.getAsObject();
-        referencedNote = JSON.parse(row.note);
-      } else {
-        break;
-      }
-    }
-  }
-
-  if (root) {
-    hash = window.NostrTools.nip19.noteEncode(root) + "-" + window.NostrTools.nip19.noteEncode(note["id"]);
-  } else {
-    hash = window.NostrTools.nip19.noteEncode(note["id"])
-  }
 
   div.classList.add('note');
 
-  div.id = hash;
-
-  if (document.getElementById('search-bar').value == hash) {
-    div.classList.add('highlight');
-  }
+  div.id = 'foo';
 
   var epoch_timestamp = new Date(0);
   epoch_timestamp.setUTCSeconds(data.created_at);
@@ -769,24 +716,6 @@ function displayToast(parent, data, note, params) {
     imageClass = 'hashicon';
   }
 
-  var eTagString = '';
-  eTags.forEach(function (tag, index) {
-    eTagString += `<input type="hidden" name="e" data-event-id="${tag[1]}" data-relay-url="${tag[2]}" data-marker="${tag[3]}" data-pubkey="${tag[4]}" />`
-  })
-
-  // If a note was written by the same user, we can skip displaying their npub / username again - necessary in chat mode
-  var showUser = '';
-  if (params.lastPubkey == data.pubkey) {
-    showUser = 'hidden';
-  }
-
-  // If a note was written within a short timespan of the previous note, we can skip displaying the timestamp.
-  var showTime = '';
-  if (params.lastTimestamp + 1 > data.created_at) {
-    showTime = 'opacity: 0';
-    showUser = '';
-  }
-
   var lastTimestampDate = new Date(0);
   lastTimestampDate.setUTCSeconds(params.lastTimestamp)
 
@@ -795,25 +724,17 @@ function displayToast(parent, data, note, params) {
 
   var date = null;
 
-  if (lastTimestampDate.toDateString() != epochTimestamp.toDateString()) {
-    date = document.createElement('div');
-    date.classList.add('date');
+  date = document.createElement('div');
+  date.classList.add('date');
 
-    var epochTimestamp = new Date(0);
-    epochTimestamp.setUTCSeconds(data.created_at);
+  var epochTimestamp = new Date(0);
+  epochTimestamp.setUTCSeconds(data.created_at);
 
-    date.innerHTML = `
-      <div>
-        <div class="date">${epochTimestamp.toDateString()}</div>
-      </div>
-    `
-  }
-
-  if (params.read && params.read == false) {
-    div.classList.add('unread');
-  } else if (params.read && params.read == true) {
-    div.classList.add('read')
-  }
+  date.innerHTML = `
+    <div>
+      <div class="date">${epochTimestamp.toDateString()}</div>
+    </div>
+  `
 
   var author = null;
 
@@ -902,73 +823,6 @@ function displayToast(parent, data, note, params) {
     content: (reference) => reference.dataset.tippy
   });
 
-  const permalink = document.createElement('a');
-  permalink.innerHTML = '<img src="link.svg" alt="Permalink" />';
-
-  tippy(permalink, {
-    content: 'Permalink'
-  });
-
-  permalink.onclick = function(event) {
-    event.preventDefault();
-
-    location.hash = '#' + hash;
-
-    Array.from(document.querySelectorAll('.highlight')).forEach(
-      (el) => el.classList.remove('highlight')
-    );
-
-    div.classList.add('highlight');
-  }
-
-
-  // If we're looking at an alert on the alerts page, we need a jump-to-context button
-  if (params.mode == "alerts") {
-    const expand = document.createElement('a');
-    expand.innerHTML = '<img src="expand.svg" alt="View Context" />';
-
-    tippy(expand, {
-      content: 'View Context'
-    });
-
-    expand.onclick = function(event) {
-      event.preventDefault();
-
-      Array.from(document.querySelectorAll('.highlight')).forEach(
-        (el) => el.classList.remove('highlight')
-      );
-
-      div.classList.add('highlight');
-    }
-    div.querySelector('footer').prepend(expand)
-  }
-
-
-  const reply = document.createElement('a');
-  reply.innerHTML = '<img src="reply.svg" alt="Reply" />';
-
-  tippy(reply, {
-    content: 'Reply'
-  });
-
-  reply.onclick = function() {
-    if (window.mode == "PopUpVideo") {
-      var form = document.querySelector('#footer .toast-new-form');
-      form.querySelector('.reply-details .heading').innerHTML = 'Replying to:';
-
-      var replyAuthor = getReplyAuthor(this.parentElement.parentElement.parentElement.parentElement);
-      form.querySelector('.reply-details .username').innerHTML = replyAuthor.username;
-      form.querySelector('.reply-details .pubkey').innerHTML = replyAuthor.pubkey;
-      form.querySelector('.reply-details .avatar').innerHTML = replyAuthor.avatar;
-
-      form.querySelector('.reply-details .content').innerHTML = this.parentElement.parentElement.querySelector('.content .caption').innerHTML;
-      form.querySelector('.reply-details .tags').innerHTML = this.parentElement.parentElement.querySelector('.content .tags').innerHTML;
-      form.querySelector('.reply-details').classList.remove('hidden');
-      resizeTextArea();
-      document.querySelector('#yak').scrollIntoView({ block: 'end',  behavior: 'smooth' });
-    }
-  }
-
   const link = document.createElement('a');
   link.classList.add('raw');
 
@@ -984,24 +838,75 @@ function displayToast(parent, data, note, params) {
 
   link.innerHTML = '<img src="code.svg" alt="Copy Raw" />';
   div.querySelector('footer').prepend(link)
-  div.querySelector('footer').prepend(reply)
-  div.querySelector('footer').prepend(permalink)
+  return div
+}
 
-  if (isReply && referencedNote !== undefined) {
-    const replyContext = div.querySelector('.reply-context');
-    replyContext.onclick = function(event) {
-      document.querySelector('#' + window.NostrTools.nip19.noteEncode(root) + '-' + window.NostrTools.nip19.noteEncode(referencedNote.id)).scrollIntoView();
-    }
+function displayPopUps(response) {
+  document.querySelector('#modal-popup-content').innerHTML = '';
+  document.querySelector('#modal-popup-content').appendChild(displayPopUp(response));
+}
+
+// New Messages
+function newNote(node, params) {
+  const div = document.createElement('div');
+  div.classList.add('toast-new');
+
+  var url = '';
+  var eTags = [];
+
+  if (params.eTags !== undefined) {
+    // This is a reply
+    eTags = params.eTags;
   }
 
-  if (date !== null) {
-    parent.appendChild(date);
-  }
+  var renderEtags = true;
 
-  // Chat messages display the author above the post, to allow for multiple posts from one person in a row.
-  if (author !== null) {
-    parent.appendChild(author);
-  }
+  var innerHTML = `
+    <div>
+      <div class="content">
+        <form class="toast-new-form" autocomplete="off" action="">
+          <div class="middle">
+            <div class="reply-details hidden">
+              <div class="tags"></div>
+              <button type="button" class="valid reply-cancel">×</button>
+              <p class="heading"></p>
+              <div class="context">
+                <div class="avatar"></div>
+                <span class="username"></span> <span class="pubkey"></span>
+                <br />
+                <div class="content"></div>
+              </div>
+            </div>
 
-  parent.appendChild(div)
+            <input type="hidden" name="url" value="${url}" placeholder="URL" />
+          `
+            renderEtags && eTags.forEach(function (tag, index) {
+              innerHTML += `
+            <input type="hidden" name="e" data-event-id="${tag[1]}" data-relay-url="${tag[2]}" data-marker="${tag[3]}" data-pubkey="${tag[4]}" />
+          `
+            })
+
+         innerHTML += `
+            <textarea required minlength="1" name="message" placeholder="Send a message..."></textarea>
+            <a id="show-emoji-picker-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M464 256a208 208 0 1 0 -416 0 208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0zm177.3 63.4C192.3 335 218.4 352 256 352s63.7-17 78.7-32.6c9.2-9.6 24.4-9.9 33.9-.7s9.9 24.4 .7 33.9c-22.1 23-60 47.4-113.3 47.4s-91.2-24.4-113.3-47.4c-9.2-9.6-8.9-24.8 .7-33.9s24.8-8.9 33.9 .7zM144 208a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg></a>
+          </div>
+          <button type="submit" class="toast-submit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M536.4-26.3c9.8-3.5 20.6-1 28 6.3s9.8 18.2 6.3 28l-178 496.9c-5 13.9-18.1 23.1-32.8 23.1-14.2 0-27-8.6-32.3-21.7l-64.2-158c-4.5-11-2.5-23.6 5.2-32.6l94.5-112.4c5.1-6.1 4.7-15-.9-20.6s-14.6-6-20.6-.9L229.2 276.1c-9.1 7.6-21.6 9.6-32.6 5.2L38.1 216.8c-13.1-5.3-21.7-18.1-21.7-32.3 0-14.7 9.2-27.8 23.1-32.8l496.9-178z"/></svg> Send</button>
+        </form>
+      </div>
+    </div>
+  `
+
+  div.innerHTML = innerHTML;
+
+  var textarea = div.querySelector("textarea");
+  textarea.addEventListener('keydown', (e) => validateToast(e, 2));
+  textarea.addEventListener('input', (e) => resizeTextArea(e));
+
+  var form = div.querySelector("form");
+  form.addEventListener('submit', (e) => newNoteSubmit(e));
+
+  var cancelButton = div.querySelector(".reply-cancel");
+  cancelButton.addEventListener('click', (e) => deleteReplyContent(e));
+
+  node.append(div);
 }

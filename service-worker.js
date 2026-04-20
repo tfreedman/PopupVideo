@@ -29,6 +29,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse(getRelays());
   } else if (message.action === "getUsers") {
     sendResponse(self.users);
+  } else if (message.action === "getPopUps") {
+    sendResponse(getPopUps());
   }
 });
 
@@ -624,28 +626,7 @@ initSqlJs(config).then(function(SQL){
     )
   }
 
-  function drawToasts(container, knownUsers, mode) {
-    var alerts = {};
-
-    if (mode == "alerts") {
-      var stmt = db.prepare("SELECT * FROM alerts");
-      while(stmt.step()) {
-        const row = stmt.getAsObject();
-        alerts[row.id] = row.read;
-      }
-      self.alerts = alerts;
-    }
-
-    console.log("Drawing Toasts! - Mode = " + mode);
-    try {
-      container.querySelector('.toasts-loading').classList.add("active");
-      container.querySelector('.toasts').innerHTML = '';
-      if (self.lastDrawMode != mode) {
-        container.querySelector('.toast-new').remove();
-      }
-      container.querySelector('.toast-new-button').remove();
-    } catch (e) {}
-
+  function getPopUps() {
     var users = {}
     var stmt = db.prepare("SELECT * FROM notes WHERE kind = 0");
     while(stmt.step()) {
@@ -659,12 +640,6 @@ initSqlJs(config).then(function(SQL){
     }
 
     var emptyMsg = '';
-    var pageTitle;
-    var pageSubTitle;
-    var shouldShowHeadings = false;
-    var shouldShowMessages = false;
-    var shouldShowBackButton = false;
-    var shouldShowRoomButtons = false;
     var showEmptyMessage = true;
     var showFooter = false;
     var showFilters = false;
@@ -675,185 +650,16 @@ initSqlJs(config).then(function(SQL){
       stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND domain LIKE $domain ORDER BY created_at DESC");
       emptyMsg = "Sorry, there are no channels named " + mode.substring(7);
       var closeMatchMsg = "Not what you're looking for?";
-      pageTitle = 'Search Results'
-      pageSubTitle = 'Room name: ' + mode.substring(7);
       var isExactMatch = false;
 
       stmt.bind({$domain: '%' + mode.substring(7).toLowerCase() + '%'});
 
-      shouldShowHeadings = true;
-      shouldShowMessages = false;
-
-    } else if (mode == "recent") {
-      stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 ORDER BY created_at DESC");
-      emptyMsg = "Sorry, there are no channels";
-      pageTitle = 'Channels'
-      pageSubTitle = '';
-      showFilters = true;
-
-      shouldShowHeadings = true;
-      shouldShowMessages = false;
-    } else if (mode == "alerts") {
-      var notes = "'" + Object.keys(alerts).join("','") + "'"; // couldn't get prepared statements to work
-      stmt = db.prepare("SELECT * FROM notes WHERE id IN (" + notes + ") ORDER BY created_at DESC");
-
-      emptyMsg = "Sorry, there are no alerts";
-      pageTitle = 'Alerts'
-      pageSubTitle = '';
-      showFilters = false;
-
     } else if (mode.startsWith("url-")) {
-      stmt = db.prepare("SELECT * FROM toasts WHERE kind = 1 AND url = $url ORDER BY created_at DESC");
+      stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND url = $url ORDER BY created_at DESC");
       console.log("Filtering to URL " + mode.substring(4));
       stmt.bind({$url: mode.substring(4)});
       emptyMsg = "Sorry, there are no toasts for URL " + mode.substring(4) + " - why not be the first to write one?";
 
-      shouldShowHeadings = true;
-      shouldShowMessages = false;
-
-      pageTitle = 'Search Results'
-      pageSubTitle = 'URL: ' + mode.substring(4);
-    } else if (mode.startsWith("profile")) {
-      stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND pubkey = $pubkey ORDER BY created_at DESC");
-      console.log("Filtering to profile " + mode.substring(8));
-      var pubkey = self.NostrTools.nip19.decode(mode.substring(8)).data;
-      stmt.bind({$pubkey: pubkey})
-
-      shouldShowHeadings = true;
-      shouldShowMessages = false;
-
-      var username = '';
-      if (users[pubkey]) {
-        var user = JSON.parse(users[pubkey].content);
-        username = user.name;
-      }
-      else {
-        username = 'Unknown';
-      }
-
-      emptyMsg = "Sorry, there are no channels from profile " + mode.substring(8) + ' (' + pubkey + ')';
-      pageTitle = 'Channels from ' + username;
-
-      pageSubTitle = mode.substring(8);
-    } else if (mode.startsWith("toast")) {
-      stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40 AND id = $id ORDER BY created_at DESC");
-
-      var query = mode.split('-')[1];
-
-      console.log("Filtering to toast " + query);
-
-      if (query.startsWith("note")) {
-        var id = self.NostrTools.nip19.decode(query).data;
-      } else if (query.startsWith('nevent')) {
-        var id = self.NostrTools.nip19.decode(query).data.id;
-      }
-
-      stmt.bind({$id: id});
-
-      shouldShowHeadings = false;
-      shouldShowMessages = true;
-
-      var row;
-
-      var channelName = 'Unknown';
-      while (stmt.step()) {
-        row = stmt.getAsObject();
-        try {
-          channelName = JSON.parse(JSON.parse(row["note"])["content"])["name"];
-        } catch (e) { // Ignore it and just use Unknown for now
-        }
-        showFooter = true;
-      }
-
-      pageTitle = channelName;
-      emptyMsg = "Sorry, there are no notes corresponding to " + mode.substring(6) + ' (' + id + ')';
-      //pageSubTitle = mode.substring(6).split('-')[0];
-      shouldShowBackButton = true;
-      shouldShowRoomButtons = true;
-
-      var roomButtons = document.querySelector('#room-buttons');
-      roomButtons.innerHTML = '';
-
-      const favouritesLink = document.createElement('a');
-      favouritesLink.classList.add('favourites');
-      favouritesLink.href = '#';
-      if (row.favourite) {
-        favouritesLink.innerHTML = '✦';
-      } else {
-        favouritesLink.innerHTML = '✧';
-      }
-
-      tippy(favouritesLink, {
-        content: 'Favourite'
-      });
-
-      favouritesLink.dataset.id = row.id;
-      favouritesLink.onclick = function(event) {
-        event.preventDefault();
-        var result = toggleFavourite(event.target.dataset.id);
-        if (result) {
-          event.target.innerHTML = '✦';
-        } else {
-          event.target.innerHTML = '✧';
-        }
-      }
-
-      const debugLink = document.createElement('a');
-      debugLink.classList.add('raw');
-      debugLink.href = '#';
-      debugLink.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M360.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm64.6 136.1c-12.5 12.5-12.5 32.8 0 45.3l73.4 73.4-73.4 73.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3l-96-96c-12.5-12.5-32.8-12.5-45.3 0zm-274.7 0c-12.5-12.5-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 150.6 182.6c12.5-12.5 12.5-32.8 0-45.3z"/></svg>';
-      debugLink.dataset.id = row.note;
-
-      tippy(debugLink, {
-        content: 'Copy to Clipboard'
-      });
-
-      debugLink.onclick = function(event) {
-        event.preventDefault();
-        var note = event.target.dataset.id;
-        console.log(note);
-        writeClipboardText(note);
-      }
-
-      roomButtons.prepend(debugLink);
-      roomButtons.prepend(favouritesLink);
-
-    } else if (mode.startsWith("replies-")) {
-      shouldShowHeadings = false;
-      shouldShowMessages = true;
-
-      console.log('Loading replies for ' + mode.substring(8));
-      var dirty = false;
-      var replies = [];
-
-      // TODO: rewrite this to not use LIKE, and properly search for replies
-      // This is only doable with an index of tags though.
-      // {kinds: [1], '#e': [mode.substring(8), "", "root/reply"]}
-
-      stmt = db.prepare("SELECT * FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid ORDER BY created_at ASC");
-      stmt.bind({$id: mode.substring(8), $noteid: '%' + mode.substring(8) + '%'});
-
-      emptyMsg = "";
-
-      // This is called from within a thread - there's no need to set the page title or subtitle
-    } else if (mode.startsWith("messages-")) {
-      shouldShowHeadings = false;
-      shouldShowMessages = false;
-
-      console.log('Loading messages for ' + mode.substring(9));
-      var dirty = false;
-      var replies = [];
-
-      // TODO: rewrite this to not use LIKE, and properly search for replies
-      // This is only doable with an index of tags though.
-      // {kinds: [1], '#e': [mode.substring(9), "", "root/reply"]}
-
-      stmt = db.prepare("SELECT * FROM notes WHERE kind = 42 AND note LIKE $noteid ORDER BY created_at ASC");
-      stmt.bind({$noteid: '%' + mode.substring(9) + '%'});
-
-      emptyMsg = "";
-
-      // This is called from within a thread - there's no need to set the page title or subtitle
     }
 
     var row;
@@ -921,150 +727,6 @@ initSqlJs(config).then(function(SQL){
         }
       }
 
-      if (shouldShowHeadings) {
-        var article = document.createElement('div');
-
-        var ccStmt = db.prepare("SELECT COUNT(*) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid");
-        var pStmt = db.prepare("SELECT COUNT(DISTINCT pubkey) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid");
-        pStmt.bind({$id: event.id, $noteid: '%' + event.id + '%'});
-
-        var isParticipantStmt = db.prepare("SELECT COUNT(*) FROM notes WHERE kind = 42 AND id <> $id AND note LIKE $noteid AND pubkey = $pubkey");
-        isParticipantStmt.bind({$id: event.id, $noteid: '%' + event.id + '%', $pubkey: self.pubKey});
-
-        var isParticipant = false;
-        if (isParticipantStmt.step()) {var isParticipantCount = isParticipantStmt.getAsObject()["COUNT(*)"]}
-        var isParticipant = isParticipantCount > 0;
-
-        var isFavourite = row.favourite;
-
-        article.classList.add('toast');
-
-        // We don't care when a room was created - instead, we're storing the last message's timestamp in there.
-        var isUnread = row.created_at > row.read_at;
-
-        if (isUnread) {
-          article.classList.add('unread');
-        }
-
-        if (isParticipant) {
-          article.classList.add('participant');
-        }
-
-        if (isFavourite) {
-          article.classList.add('favourite')
-        }
-
-        var isCreator = (event.pubkey == self.pubKey);
-
-        if (isCreator) {
-          article.classList.add('creator');
-        }
-
-        // var lastUpdatedTimestamp = new Date(0);
-        // lastUpdatedTimestamp.setUTCSeconds(event.created_at);
-        // <span class="middot">&middot;</span> ${lastUpdatedTimestamp}
-        ccStmt.bind({$id: event.id, $noteid: '%' + event.id + '%'});
-
-        if (ccStmt.step()) {var messagesCount = ccStmt.getAsObject()["COUNT(*)"]}
-        var messagesString = '';
-
-        if (messagesCount != 1) {
-          messagesString = 'messages';
-        } else {
-          messagesString = 'message';
-        }
-
-        var favouriteIcon = '';
-
-        if (row.favourite) {
-          favouriteIcon = '✦';
-        } else {
-          favouriteIcon = '✧';
-        }
-
-        var participantsString = '';
-        if (pStmt.step()) {var participantsCount = pStmt.getAsObject()["COUNT(DISTINCT pubkey)"]}
-
-        if (participantsCount != 1) {
-          participantsString = 'users';
-        } else {
-          participantsString = 'user';
-        }
-
-        var epochTimestamp = new Date(0);
-        epochTimestamp.setUTCSeconds(event.created_at);
-
-        var roomName = 'Unknown';
-
-        try {
-          roomName = JSON.parse(event.content)["name"];
-        } catch (e) {
-          roomName = event.content + ' *';
-        }
-        var innerHTML = `<a class="favourites">${favouriteIcon}</a> <h2><a class="title">${roomName}</a></h2>
-        <p><a class="messages"></a> <span class="middot">&middot;</span> <span class="participants">${participantsCount} ${participantsString}</span></p>
-        `
-        article.innerHTML = innerHTML;
-        container.querySelector('.toasts').appendChild(article);
-
-        var favouritesLink = article.querySelector('a.favourites');
-        favouritesLink.dataset.id = row.id;
-        favouritesLink.onclick = function(event) {
-          event.preventDefault();
-          var result = toggleFavourite(event.target.dataset.id);
-          if (result) {
-            favouritesLink.innerHTML = '✦';
-          } else {
-            favouritesLink.innerHTML = '✧';
-          }
-          searchResults(document.getElementById('search-bar').value);
-        }
-
-        var messagesLink = article.querySelector('a.messages');
-        messagesLink.innerHTML = `${messagesCount} ${messagesString}`
-        messagesLink.onclick = function(event) {
-          event.preventDefault();
-
-          markToastAsRead(event.target.dataset.id);
-          document.getElementById('search-bar').value = event.target.dataset.id;
-          searchResults(document.getElementById('search-bar').value);
-          history.pushState({hash: event.target.dataset.id, title: document.title}, '', '#' + event.target.dataset.id);
-        }
-        messagesLink.href = '#' + self.NostrTools.nip19.noteEncode(event.id);
-        messagesLink.dataset.id = self.NostrTools.nip19.noteEncode(event.id);
-
-        var titleLink = article.querySelector('a.title');
-        titleLink.onclick = messagesLink.onclick;
-        titleLink.href = '#' + self.NostrTools.nip19.noteEncode(event.id);
-        titleLink.dataset.id = self.NostrTools.nip19.noteEncode(event.id);
-
-        try { // Toastr only
-          var domainLink = article.querySelector('a.domain');
-          domainLink.innerHTML = `${row.domain}`
-          domainLink.onclick = function(event) {
-            event.preventDefault();
-            document.getElementById('search-bar').value = event.target.dataset.domain;
-            searchResults(document.getElementById('search-bar').value);
-            history.pushState({hash: event.target.dataset.domain, title: document.title}, '', '#' + event.target.dataset.domain);
-          }
-          domainLink.href = '#' + row.url;
-          domainLink.dataset.domain = row.domain;
-          domainLink.dataset.url = row.url;
-
-          var submitterLink = article.querySelector('a.submitter');
-          submitterLink.innerHTML = `${username}`
-          submitterLink.onclick = function(event) {
-            event.preventDefault();
-            document.getElementById('search-bar').value = event.target.dataset.pubkey;
-            searchResults(document.getElementById('search-bar').value);
-            history.pushState({hash: event.target.dataset.pubkey, title: document.title}, '', "#" + event.target.dataset.pubkey);
-          }
-
-          submitterLink.href = '#' + self.NostrTools.nip19.npubEncode(event.pubkey);
-          submitterLink.dataset.pubkey = self.NostrTools.nip19.npubEncode(event.pubkey);
-        } catch {}
-      }
-
       if (!shouldShowHeadings && !mode.startsWith("toast")) {
         // TODO: populate this
         var isReply = false;
@@ -1073,88 +735,6 @@ initSqlJs(config).then(function(SQL){
         lastPubkey = event.pubkey;
         lastTimestamp = event.created_at;
       }
-
-      if (shouldShowMessages) {
-        // Draw replies
-
-        const children = document.createElement('div');
-        children.classList.add('children');
-
-        container.querySelector('.toasts').appendChild(children);
-
-        const toasts = document.createElement('div');
-        toasts.classList.add('toasts');
-        children.appendChild(toasts);
-
-        var marker = 'root';
-        // Copy all of the e Tags from the references in the parent post
-        var eTags = [];
-        event["tags"].forEach((tag) => {
-          if (tag[0] == "e") {
-            eTags.push(tag);
-            if (tag[3] && tag[3] == 'root') {
-              marker = 'reply'; // If there's a root e tag defined, mark it as a reply instead.
-            }
-          }
-        });
-
-        // Add the parent post itself as a reference
-        eTags.push(['e', event.id, '', marker, event.pubkey]);
-        newNote(children, {eTags: eTags});
-        drawToasts(container.querySelector('.toasts'), knownUsers, "messages-" + event.id);
-
-        console.log('mode:' + container.querySelector('.toasts').children.length);
-
-        var classFilter = '';
-        classFilter = '.note';
-
-        if (!document.querySelector('.toasts ' + classFilter) && mode.startsWith('toast-')) {
-          // Add text if there are currently no messages.
-          showEmptyMessage = true;
-          emptyMsg = 'no messages (yet) - why not be the first to write one?'
-        }
-      }
-    }
-
-    if (pageTitle !== undefined) {
-      document.querySelector('h1#title').innerHTML = pageTitle;
-      document.title = 'PopUp Video - ' + pageTitle;
-
-      if (pageSubTitle !== undefined) {
-        document.querySelector('h2#subtitle').innerHTML = pageSubTitle;
-        if (showFilters) {
-          document.querySelector('h2#subtitle').innerHTML = `<p class="filters"><a href="#" data-filter="all">all</a> <span class="middot">&middot;</span> <a href="#" data-filter="favourite">favourites</a><span class="middot">&middot;</span> <a href="#" data-filter="participant">participated</a> <span class="middot">&middot;</span> <a href="#" data-filter="creator">created</a></p>`
-
-          var links = document.querySelectorAll("h2#subtitle a");
-          links.forEach(i => {
-            i.addEventListener('click', (e) => filterToasts(e));
-          });
-        }
-
-
-      } else {
-        document.querySelector('h2#subtitle').innerHTML = '';
-      }
-    }
-
-    if (shouldShowBackButton) {
-      document.querySelector('#backBtn').style.display = 'inline-block';
-    } else {
-      document.querySelector('#backBtn').style.display = 'none';
-    }
-
-    if (shouldShowRoomButtons) {
-      document.querySelector('#room-buttons').style.display = 'block';
-    } else {
-      document.querySelector('#room-buttons').style.display = 'none';
-    }
-
-    if (showFooter) {
-      document.querySelector('footer#footer').style.display = 'block';
-      document.querySelector('#parent').classList.remove('hidden-footer');
-    } else {
-      document.querySelector('footer#footer').style.display = 'none';
-      document.querySelector('#parent').classList.add('hidden-footer');
     }
 
     try {
@@ -1198,11 +778,6 @@ initSqlJs(config).then(function(SQL){
         document.querySelector('#footer').innerHTML = ''; // remove old forms
         newNote(document.querySelector('#footer'), {eTags: [['e', event.id, '', 'root', event.pubkey]], showButton: true});
       }
-
-      if (document.getElementById('search-bar').value) {
-        document.querySelector('#' + document.getElementById('search-bar').value).scrollIntoView();
-      }
-
     } catch (e) {}
   }
 
@@ -1245,72 +820,6 @@ innerHTML += `<button type="submit" class="toast-submit-button">${submitText}</b
     inputs.forEach(i => {
       i.addEventListener('keydown', (e) => validateToast(e, 1));
     });
-
-    node.append(div);
-  }
-
-  // New Messages
-  function newNote(node, params) {
-    const div = document.createElement('div');
-    div.classList.add('toast-new');
-
-    var url = '';
-    var eTags = [];
-
-    if (params.eTags !== undefined) {
-      // This is a reply
-      eTags = params.eTags;
-    }
-
-    var renderEtags = true;
-
-    var innerHTML = `
-      <div>
-        <div class="content">
-          <form class="toast-new-form" autocomplete="off" action="">
-            <div class="middle">
-              <div class="reply-details hidden">
-                <div class="tags"></div>
-                <button type="button" class="valid reply-cancel">×</button>
-
-                <p class="heading"></p>
-                <div class="context">
-                  <div class="avatar"></div>
-                  <span class="username"></span> <span class="pubkey"></span>
-                  <br />
-                  <div class="content"></div>
-                </div>
-              </div>
-
-              <input type="hidden" name="url" value="${url}" placeholder="URL" />
-            `
-              renderEtags && eTags.forEach(function (tag, index) {
-                innerHTML += `
-              <input type="hidden" name="e" data-event-id="${tag[1]}" data-relay-url="${tag[2]}" data-marker="${tag[3]}" data-pubkey="${tag[4]}" />
-            `
-              })
-
-           innerHTML += `
-              <textarea required minlength="1" name="message" placeholder="Send a message..."></textarea>
-              <a id="show-emoji-picker-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M464 256a208 208 0 1 0 -416 0 208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0zm177.3 63.4C192.3 335 218.4 352 256 352s63.7-17 78.7-32.6c9.2-9.6 24.4-9.9 33.9-.7s9.9 24.4 .7 33.9c-22.1 23-60 47.4-113.3 47.4s-91.2-24.4-113.3-47.4c-9.2-9.6-8.9-24.8 .7-33.9s24.8-8.9 33.9 .7zM144 208a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg></a>
-            </div>
-            <button type="submit" class="toast-submit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M536.4-26.3c9.8-3.5 20.6-1 28 6.3s9.8 18.2 6.3 28l-178 496.9c-5 13.9-18.1 23.1-32.8 23.1-14.2 0-27-8.6-32.3-21.7l-64.2-158c-4.5-11-2.5-23.6 5.2-32.6l94.5-112.4c5.1-6.1 4.7-15-.9-20.6s-14.6-6-20.6-.9L229.2 276.1c-9.1 7.6-21.6 9.6-32.6 5.2L38.1 216.8c-13.1-5.3-21.7-18.1-21.7-32.3 0-14.7 9.2-27.8 23.1-32.8l496.9-178z"/></svg> Send</button>
-          </form>
-        </div>
-      </div>
-    `
-
-    div.innerHTML = innerHTML;
-
-    var textarea = div.querySelector("textarea");
-    textarea.addEventListener('keydown', (e) => validateToast(e, 2));
-    textarea.addEventListener('input', (e) => resizeTextArea(e));
-
-    var form = div.querySelector("form");
-    form.addEventListener('submit', (e) => newNoteSubmit(e));
-
-    var cancelButton = div.querySelector(".reply-cancel");
-    cancelButton.addEventListener('click', (e) => deleteReplyContent(e));
 
     node.append(div);
   }
