@@ -95,6 +95,33 @@ function createProfilePopUp() {
   document.querySelector('body').appendChild(div);
 }
 
+function createPopUpPopUp() {
+  var div = document.createElement("div");
+  div.classList.add('modal');
+  div.classList.add('micromodal-slide');
+  div.id = "modal-popup";
+  div.ariaHidden = "true";
+  div.innerHTML = `
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-popup-title">
+        <header class="modal__header">
+          <div></div>
+          <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+        </header>
+        <main class="modal__content" id="modal-popup-content">
+          <div class="banner">
+            <div class="avatar">
+              <img src="" />
+            </div>
+          </div>
+          <h1 class="modal__title" id="modal-popup-title"></h1>
+        </main>
+      </div>
+    </div>
+  `;
+  document.querySelector('body').appendChild(div);
+}
+
 function createAccountPopUp() {
   var div = document.createElement("div");
   div.classList.add('modal');
@@ -413,6 +440,16 @@ waitForEl("#movie_player").then(() => {
   profile.dataset.micromodalTrigger = "modal-profile";
   document.querySelector('#center').appendChild(profile);
 
+
+createPopUpPopUp();
+  var popup = document.createElement("a");
+  popup.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M40 48C26.7 48 16 58.7 16 72l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24L40 48zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L192 64zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zM16 232l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0z"/></svg> PopUps</span>';
+  popup.classList.add('modal-popup-button');
+  popup.dataset.micromodalTrigger = "modal-popup";
+  document.querySelector('#center').appendChild(popup);
+
+
+
   modalInitialization();
 
   // Test code
@@ -545,9 +582,8 @@ function uploadProfileEvent(note) {
 }
 
 var snd = new Audio("/pop.mp3");
-window.lastDrawMode = null;
 
-tippy('.right > a, #search', {
+tippy('.right > a', {
   content: (reference) => reference.dataset.tippy
 });
 
@@ -650,14 +686,11 @@ function uploadNote(data, note, parent) {
 
     if (isToast) {
       window.importToast(note, window.hasFinishedLoading);
-      document.getElementById('search-bar').value = window.NostrTools.nip19.noteEncode(note["id"]);
-      history.pushState({hash: note["id"], title: document.title}, '', '#' + note["id"]);
     } else {
       window.importNote(note, window.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
     }
 
     if (window.mode == "PopUpVideo") {
-      searchResults(document.getElementById('search-bar').value);
       if (!isToast && note["kind"] != 30078)  {
         document.querySelector('#container').scrollTo({left: 0, top: document.querySelector('#container').scrollHeight, behavior: "smooth"});
       }
@@ -900,11 +933,6 @@ function displayToast(parent, data, note, params) {
 
     expand.onclick = function(event) {
       event.preventDefault();
-
-      document.getElementById('search-bar').value = hash;
-      searchResults(document.getElementById('search-bar').value);
-
-      location.hash = '#' + hash;
 
       Array.from(document.querySelectorAll('.highlight')).forEach(
         (el) => el.classList.remove('highlight')
