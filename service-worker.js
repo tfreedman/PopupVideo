@@ -589,7 +589,7 @@ initSqlJs(config).then(function(SQL){
     }
 
     //stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 42 AND url = $url ORDER BY created_at DESC");
-    stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 42 ORDER BY created_at DESC");
+    stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 42 ORDER BY created_at DESC");
     //stmt.bind({$url: mode.substring(4)});
 
     var row;
