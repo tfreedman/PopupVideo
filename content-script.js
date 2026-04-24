@@ -420,29 +420,33 @@ waitForEl("#movie_player").then(() => {
   var updateUIInterval = window.setInterval(function(){updateUI(document.querySelector('#popup-video'))}, 100);
 
 
-  createAccountPopUp();
-  var account = document.createElement("a");
-  account.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M463 448.2C440.9 409.8 399.4 384 352 384L288 384C240.6 384 199.1 409.8 177 448.2C212.2 487.4 263.2 512 320 512C376.8 512 427.8 487.3 463 448.2zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM320 336C359.8 336 392 303.8 392 264C392 224.2 359.8 192 320 192C280.2 192 248 224.2 248 264C248 303.8 280.2 336 320 336z"/></svg> Account</span>';
-  account.classList.add('modal-account-button');
-  account.dataset.micromodalTrigger = "modal-account";
-  document.querySelector('#center').appendChild(account);
+  if (document.querySelector('#center .modal-account-button') === null) {
+    createAccountPopUp();
+    var account = document.createElement("a");
+    account.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M463 448.2C440.9 409.8 399.4 384 352 384L288 384C240.6 384 199.1 409.8 177 448.2C212.2 487.4 263.2 512 320 512C376.8 512 427.8 487.3 463 448.2zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM320 336C359.8 336 392 303.8 392 264C392 224.2 359.8 192 320 192C280.2 192 248 224.2 248 264C248 303.8 280.2 336 320 336z"/></svg> Account</span>';
+    account.classList.add('modal-account-button');
+    account.dataset.micromodalTrigger = "modal-account";
+    document.querySelector('#center').appendChild(account);
+  }
 
-  createProfilePopUp();
-  var profile = document.createElement("a");
-  profile.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M463 448.2C440.9 409.8 399.4 384 352 384L288 384C240.6 384 199.1 409.8 177 448.2C212.2 487.4 263.2 512 320 512C376.8 512 427.8 487.3 463 448.2zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM320 336C359.8 336 392 303.8 392 264C392 224.2 359.8 192 320 192C280.2 192 248 224.2 248 264C248 303.8 280.2 336 320 336z"/></svg> Profile</span>';
-  profile.classList.add('modal-profile-button');
-  profile.dataset.micromodalTrigger = "modal-profile";
-  document.querySelector('#center').appendChild(profile);
-
-
-createPopUpPopUp();
-  var popup = document.createElement("a");
-  popup.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M40 48C26.7 48 16 58.7 16 72l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24L40 48zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L192 64zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zM16 232l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0z"/></svg> PopUps</span>';
-  popup.classList.add('modal-popup-button');
-  popup.dataset.micromodalTrigger = "modal-popup";
-  document.querySelector('#center').appendChild(popup);
+  if (document.querySelector('#center .modal-profile-button') === null) {
+    createProfilePopUp();
+    var profile = document.createElement("a");
+    profile.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M463 448.2C440.9 409.8 399.4 384 352 384L288 384C240.6 384 199.1 409.8 177 448.2C212.2 487.4 263.2 512 320 512C376.8 512 427.8 487.3 463 448.2zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM320 336C359.8 336 392 303.8 392 264C392 224.2 359.8 192 320 192C280.2 192 248 224.2 248 264C248 303.8 280.2 336 320 336z"/></svg> Profile</span>';
+    profile.classList.add('modal-profile-button');
+    profile.dataset.micromodalTrigger = "modal-profile";
+    document.querySelector('#center').appendChild(profile);
+  }
 
 
+  if (document.querySelector('#center .modal-popup-button') === null) {
+    createPopUpPopUp();
+    var popup = document.createElement("a");
+    popup.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M40 48C26.7 48 16 58.7 16 72l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24L40 48zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L192 64zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zM16 232l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0z"/></svg> PopUps</span>';
+    popup.classList.add('modal-popup-button');
+    popup.dataset.micromodalTrigger = "modal-popup";
+    document.querySelector('#center').appendChild(popup);
+  }
 
   modalInitialization();
 
@@ -579,8 +583,6 @@ function uploadProfileEvent(note) {
   });
 }
 
-var snd = new Audio("/pop.mp3");
-
 tippy('.right > a', {
   content: (reference) => reference.dataset.tippy
 });
@@ -609,15 +611,6 @@ function validateToast(event, depth) {
       // Do nothing
     }
   }
-}
-
-function deleteReplyContent(event) {
-  event.originalTarget.parentElement.querySelector('.heading').innerHTML = '';
-  event.originalTarget.parentElement.querySelector('.username').innerHTML = '';
-  event.originalTarget.parentElement.querySelector('.content').innerHTML = '';
-  event.originalTarget.parentElement.querySelector('.tags').innerHTML = '';
-  event.originalTarget.parentElement.classList.add('hidden');
-  resizeTextArea();
 }
 
 function randomBytes(bytesLength = 32) {
@@ -704,10 +697,7 @@ function displayPopUp(response) {
 
   div.classList.add('note');
 
-  div.id = 'foo';
-
-  var epoch_timestamp = new Date(0);
-  epoch_timestamp.setUTCSeconds(data.created_at);
+  div.id = response.id;
 
   var imageClass = '';
 
@@ -716,9 +706,6 @@ function displayPopUp(response) {
     imageClass = 'hashicon';
   }
 
-  var lastTimestampDate = new Date(0);
-  lastTimestampDate.setUTCSeconds(params.lastTimestamp)
-
   var epochTimestamp = new Date(0);
   epochTimestamp.setUTCSeconds(data.created_at);
 
@@ -726,9 +713,6 @@ function displayPopUp(response) {
 
   date = document.createElement('div');
   date.classList.add('date');
-
-  var epochTimestamp = new Date(0);
-  epochTimestamp.setUTCSeconds(data.created_at);
 
   date.innerHTML = `
     <div>
@@ -759,12 +743,6 @@ function displayPopUp(response) {
       </div>
     `
 
-    if (params.read && params.read == false) {
-      author.classList.add('unread');
-    } else if (params.read && params.read == true) {
-      author.classList.add('read')
-    }
-
     var links = author.querySelectorAll("a");
     links.forEach(i => {
       i.addEventListener('click', (e) => updateProfileModal(e, data.pubkey));
@@ -774,7 +752,7 @@ function displayPopUp(response) {
   var innerHTML = `
     <div>
       <div class="content">
-        <div class="created_at" style="${showTime}"><time data-tippy="${epochTimestamp.toUTCString()}" datetime="${epoch_timestamp}">${(epochTimestamp.getHours() < 10 ? '0' : '') + epochTimestamp.getHours()}:${(epochTimestamp.getMinutes() < 10 ? '0' : '') + epochTimestamp.getMinutes()}</time></div>
+        <div class="created_at" style="${showTime}"><time data-tippy="${epochTimestamp.toUTCString()}" datetime="${epochTimestamp}">${(epochTimestamp.getHours() < 10 ? '0' : '') + epochTimestamp.getHours()}:${(epochTimestamp.getMinutes() < 10 ? '0' : '') + epochTimestamp.getMinutes()}</time></div>
         <div class="caption">`
 
       if (isReply && referencedNote !== undefined) {
@@ -846,7 +824,6 @@ function displayPopUps(response) {
   document.querySelector('#modal-popup-content').appendChild(displayPopUp(response));
 }
 
-// New Messages
 function newNote(node, params) {
   const div = document.createElement('div');
   div.classList.add('toast-new');
@@ -900,13 +877,9 @@ function newNote(node, params) {
 
   var textarea = div.querySelector("textarea");
   textarea.addEventListener('keydown', (e) => validateToast(e, 2));
-  textarea.addEventListener('input', (e) => resizeTextArea(e));
 
   var form = div.querySelector("form");
   form.addEventListener('submit', (e) => newNoteSubmit(e));
-
-  var cancelButton = div.querySelector(".reply-cancel");
-  cancelButton.addEventListener('click', (e) => deleteReplyContent(e));
 
   node.append(div);
 }
