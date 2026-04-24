@@ -281,8 +281,8 @@ function createAccountPopUp() {
   function updateKeys() {
     try { // Basic validation - if we can generate an npub from the input, it's a valid key
       if (window.NostrTools.nip19.decode(document.querySelector('#keys input[name="privkey"]').value).data) {
-        storage.local.set("privkey", document.querySelector('#keys input[name="privkey"]').value);
-        storage.local.set("version", 0); // This will mismatch with the existing DB version, causing it to be blown away on reload
+        // storage.local.set("privkey", document.querySelector('#keys input[name="privkey"]').value); FIXME
+        // storage.local.set("version", 0); // This will mismatch with the existing DB version, causing it to be blown away on reload FIXME
         document.querySelector('#keys .edit-container').style.display = 'block'
         document.querySelector('#keys .submit-container').style.display = 'none';
         window.location.reload();
@@ -302,39 +302,6 @@ function createAccountPopUp() {
     } else {
       data.querySelector('#modal-account button[type="submit"]').disabled = true;
     }
-  }
-
-  function updateProfile(event) {
-    if (event !== undefined) {
-      event.preventDefault();
-    }
-    var content = {};
-    var container = document.querySelector('#modal-account-content');
-    var name = container.querySelector('input[name="name"]').value;
-    var displayName = container.querySelector('input[name="display_name"]').value;
-    var website = container.querySelector('input[name="website"]').value;
-    var banner = container.querySelector('input[name="banner"]').value;
-    var picture = container.querySelector('input[name="picture"]').value;
-    var about = container.querySelector('textarea[name="about"]').value;
-
-    if (name.length > 0) {content.name = name}
-    if (displayName.length > 0) {content.displayName = displayName}
-    if (website.length > 0) {content.website = website}
-    if (banner.length > 0) {content.banner = banner}
-    if (picture.length > 0) {content.picture = picture}
-    if (about.length > 0) {content.about = about}
-
-    var e = {
-      created_at: Math.floor(Date.now() / 1000),
-      kind: 0,
-      tags: [],
-      content: JSON.stringify(content)
-    }
-
-    // NIP07 unsupported
-    var event = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(window.privkey).data))
-    console.log("signed event without nip07: " + event);
-    uploadProfileEvent(event);
   }
 
   document.querySelectorAll('#profile .picture-upload-group > button[type="button"]').forEach(button => {
@@ -393,6 +360,39 @@ function waitForEl(el) {
       }
     }, 500);
   });
+}
+
+function updateProfile(event) {
+  if (event !== undefined) {
+    event.preventDefault();
+  }
+  var content = {};
+  var container = document.querySelector('#modal-account-content');
+  var name = container.querySelector('input[name="name"]').value;
+  var displayName = container.querySelector('input[name="display_name"]').value;
+  var website = container.querySelector('input[name="website"]').value;
+  var banner = container.querySelector('input[name="banner"]').value;
+  var picture = container.querySelector('input[name="picture"]').value;
+  var about = container.querySelector('textarea[name="about"]').value;
+
+  if (name.length > 0) {content.name = name}
+  if (displayName.length > 0) {content.displayName = displayName}
+  if (website.length > 0) {content.website = website}
+  if (banner.length > 0) {content.banner = banner}
+  if (picture.length > 0) {content.picture = picture}
+  if (about.length > 0) {content.about = about}
+
+  var e = {
+    created_at: Math.floor(Date.now() / 1000),
+    kind: 0,
+    tags: [],
+    content: JSON.stringify(content)
+  }
+
+  // NIP07 unsupported
+  var event = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(window.privkey).data))
+  console.log("signed event without nip07: " + event);
+  uploadProfileEvent(event);
 }
 
 function displayRelays(relays, isDebuggingEnabled) {
@@ -652,7 +652,7 @@ function newNoteSubmit(event) {
   }
 
   // NIP07 unsupported
-  var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(storage.local.get('privkey')).data))
+  var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(window.privkey).data))
   console.log("signed note without nip07: " + note);
   uploadNote(data, note, data.parentElement.parentElement.parentElement);
 }
@@ -701,13 +701,13 @@ function displayPopUp(response) {
 
   var imageClass = '';
 
-  if (data.avatarURL === null) {
-    data.avatarURL = hashicon(data.pubkey).toDataURL();
+  if (response.avatarURL === null) {
+    response.avatarURL = hashicon(response.pubkey).toDataURL();
     imageClass = 'hashicon';
   }
 
   var epochTimestamp = new Date(0);
-  epochTimestamp.setUTCSeconds(data.created_at);
+  epochTimestamp.setUTCSeconds(response.created_at);
 
   var date = null;
 
@@ -722,32 +722,30 @@ function displayPopUp(response) {
 
   var author = null;
 
-  if (showUser == '') {
-    author = document.createElement('div');
-    author.classList.add('author');
-    author.innerHTML = `
-      <div>
-        <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#">
-          <div class="avatar">
-            <img src="${data.avatarURL}" class="${imageClass}"/>
-          </div>
-        </a>
-        <div class="content">
-          <header>
-            <div class="details">
-              <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><span class="username">${data.username}</span></a>
-            </div>
-            <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><div class="pubkey">${window.NostrTools.nip19.npubEncode(data.pubkey)}</div></a>
-          </header>
+  author = document.createElement('div');
+  author.classList.add('author');
+  author.innerHTML = `
+    <div>
+      <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#">
+        <div class="avatar">
+          <img src="${response.avatarURL}" class="${imageClass}"/>
         </div>
+      </a>
+      <div class="content">
+        <header>
+          <div class="details">
+            <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><span class="username">${response.username}</span></a>
+          </div>
+          <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><div class="pubkey">${window.NostrTools.nip19.npubEncode(response.pubkey)}</div></a>
+        </header>
       </div>
-    `
+    </div>
+  `
 
-    var links = author.querySelectorAll("a");
-    links.forEach(i => {
-      i.addEventListener('click', (e) => updateProfileModal(e, data.pubkey));
-    });
-  }
+  var links = author.querySelectorAll("a");
+  links.forEach(i => {
+    i.addEventListener('click', (e) => updateProfileModal(e, response.pubkey));
+  });
 
   var innerHTML = `
     <div>
@@ -785,7 +783,7 @@ function displayPopUp(response) {
       }
 
       innerHTML += `
-      ${linkifyAndEmbed(data.message.replace(/\n/g, '<br />'))}
+      ${linkifyAndEmbed(response.message.replace(/\n/g, '<br />'))}
         </div>
         <footer></footer>
         <div class="tags hidden">
