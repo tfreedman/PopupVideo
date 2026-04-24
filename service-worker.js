@@ -102,8 +102,13 @@ config = {
 }
 
 function syncDatabase() {
-  var dbstr = toBinString(self.db.export());
-  storage.local.set({database: dbstr});
+  if (self.db !== null) {
+    console.log('Syncing Database...');
+    var dbstr = toBinString(self.db.export());
+    storage.local.set({database: dbstr});
+  } else {
+    console.log('self.db is null?');
+  }
 }
 
 function exportSettings() {
@@ -173,13 +178,13 @@ function importSettings(note) {
   // Alerts
   Object.keys(settings["alerts"]).forEach(key => {
     var note = settings["alerts"][key];
-    var stmt = db.prepare("SELECT * FROM alerts WHERE id = $id");
+    var stmt = self.db.prepare("SELECT * FROM alerts WHERE id = $id");
     stmt.bind({$id: note.id});
     var result = null;
     while(stmt.step()) {
       result = note.id;
       console.log('setting read on alert ' + note.id);
-      db.run("UPDATE alerts SET read = ? WHERE id = ?", [note.read, note.id]);
+      self.db.run("UPDATE alerts SET read = ? WHERE id = ?", [note.read, note.id]);
     }
     if (result === null) {
       console.log('No match for ' + note.id + ' in alerts table');
@@ -230,7 +235,7 @@ initSqlJs(config).then(function(SQL){
     var domain = JSON.parse(value["content"])["name"].toLowerCase();
 
     console.log('Inserting ' + value['id'] + ' - (' + domain + ') into Toasts DB...');
-    db.run("INSERT OR IGNORE INTO toasts (id, created_at, domain, url, pubkey, kind, note, favourite, read_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [value['id'], value['created_at'], domain, taggedUrl, value['pubkey'], value['kind'], note, false, 0]);
+    self.db.run("INSERT OR IGNORE INTO toasts (id, created_at, domain, url, pubkey, kind, note, favourite, read_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [value['id'], value['created_at'], domain, taggedUrl, value['pubkey'], value['kind'], note, false, 0]);
 
     if (immediateWrite) {
       syncDatabase();
@@ -241,14 +246,14 @@ initSqlJs(config).then(function(SQL){
     var dirty = false;
     var note = JSON.stringify(value);
     if (value['kind'] == 0) {
-      var existing_note = db.exec("SELECT created_at FROM notes WHERE pubkey = ? AND kind = 0", [value['pubkey']])
+      var existing_note = self.db.exec("SELECT created_at FROM notes WHERE pubkey = ? AND kind = 0", [value['pubkey']])
       if (existing_note.length == 0) {
         console.log('Inserting ' + value['id'] + ' into Notes DB...');
         self.users[value['pubkey']] = value;
         if (value['pubkey'] == self.pubkey) {
           displayProfile(self.pubkey);
         }
-        db.run("INSERT INTO notes (id, created_at, pubkey, kind, note) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], value['kind'], note]);
+        self.db.run("INSERT INTO notes (id, created_at, pubkey, kind, note) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], value['kind'], note]);
         dirty = true;
         console.log('Adding ' + value['pubkey'] + ' to self.users...');
       } else {
@@ -258,7 +263,7 @@ initSqlJs(config).then(function(SQL){
           if (value['pubkey'] == self.pubkey) {
             displayProfile(self.pubkey);
           }
-          db.exec("UPDATE notes SET id = ?, created_at = ?, kind = ?, note = ? WHERE pubkey = ? AND kind = 0", [value['id'], value['created_at'], value['kind'], note, value['pubkey']]);
+          self.db.exec("UPDATE notes SET id = ?, created_at = ?, kind = ?, note = ? WHERE pubkey = ? AND kind = 0", [value['id'], value['created_at'], value['kind'], note, value['pubkey']]);
           dirty = true;
           console.log('Adding ' + value['pubkey'] + ' to self.users...');
         } else {
@@ -309,15 +314,15 @@ initSqlJs(config).then(function(SQL){
       });
 
       console.log('Inserting ' + value['id'] + ' into Notes DB...');
-      db.run("INSERT OR IGNORE INTO notes (id, created_at, pubkey, kind, note) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], value['kind'], note]);
+      self.db.run("INSERT OR IGNORE INTO notes (id, created_at, pubkey, kind, note) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], value['kind'], note]);
 
       // Update the room's timestamp on each message received
-      db.run("UPDATE toasts SET created_at = MAX(created_at, ?) WHERE id = ?", [value['created_at'], parent]);
+      self.db.run("UPDATE toasts SET created_at = MAX(created_at, ?) WHERE id = ?", [value['created_at'], parent]);
 
       // Mark a room as read if the message we just received came from us
       if (value['pubkey'] == self.pubkey) {
         console.log('updating read indicator of ' + parent + ' to ' + value['created_at']);
-        db.run("UPDATE toasts SET read_at = MAX(read_at, ?) WHERE id = ?", [value['created_at'], parent]);
+        self.db.run("UPDATE toasts SET read_at = MAX(read_at, ?) WHERE id = ?", [value['created_at'], parent]);
       }
 
       dirty = true;
@@ -325,7 +330,7 @@ initSqlJs(config).then(function(SQL){
     } else if (value['kind'] == 30078 && value["pubkey"] == self.pubkey) { // NIP-78 - arbitrary custom app data
       var existing_timestamp = 0;
 
-      var stmt = db.prepare("SELECT * FROM notes WHERE pubkey = $pubkey AND kind = 30078");
+      var stmt = self.db.prepare("SELECT * FROM notes WHERE pubkey = $pubkey AND kind = 30078");
       stmt.bind({$pubkey: self.pubkey});
 
       while(stmt.step()) {
@@ -343,11 +348,11 @@ initSqlJs(config).then(function(SQL){
       if (okayToImport) {
         if (existing_timestamp === 0) {
           console.log('Inserting ' + value['id'] + ' into Notes DB...');
-          db.run("INSERT INTO notes (id, created_at, pubkey, kind, note) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], value['kind'], note]);
+          self.db.run("INSERT INTO notes (id, created_at, pubkey, kind, note) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], value['kind'], note]);
           dirty = true;
         } else if (existing_timestamp < value['created_at']) {
           console.log('Updating ' + value['id'] + ' into Notes DB...');
-          db.run("UPDATE notes SET id = ?, created_at = ?, kind = ?, note = ? WHERE pubkey = ? AND created_at < ? AND kind = 30078", [value['id'], value['created_at'], value['kind'], note, value['pubkey'], value['created_at']]);
+          self.db.run("UPDATE notes SET id = ?, created_at = ?, kind = ?, note = ? WHERE pubkey = ? AND created_at < ? AND kind = 30078", [value['id'], value['created_at'], value['kind'], note, value['pubkey'], value['created_at']]);
           dirty = true;
         } else {
           console.log('not importing settings - this event is older than ' + existing_timestamp)
@@ -381,24 +386,24 @@ initSqlJs(config).then(function(SQL){
 
   if (dbstr && dbVersion !== null && dbVersion == self.version) {
     console.log("Loading existing database - version numbers match");
-    var db = new SQL.Database(toBinArray(dbstr));
+    self.db = new SQL.Database(toBinArray(dbstr));
   } else {
     console.log("Database version mismatch or undefined - creating a new DB");
-    var db = new SQL.Database();
-    db.run("CREATE TABLE IF NOT EXISTS toasts (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, domain TEXT NOT NULL, url TEXT NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL, favourite BOOLEAN NOT NULL, read_at INTEGER NOT NULL);");
-    db.run("CREATE TABLE IF NOT EXISTS notes (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL);");
-    db.run("CREATE INDEX idx_toasts_domain ON toasts (domain);")
+    self.db = new SQL.Database();
+    self.db.run("CREATE TABLE IF NOT EXISTS toasts (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, domain TEXT NOT NULL, url TEXT NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL, favourite BOOLEAN NOT NULL, read_at INTEGER NOT NULL);");
+    self.db.run("CREATE TABLE IF NOT EXISTS notes (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL);");
+    self.db.run("CREATE INDEX idx_toasts_domain ON toasts (domain);")
   }
 
-  var dbstr = toBinString(db.export());
+  var dbstr = toBinString(self.db.export());
   storage.local.set({database: dbstr});
   storage.local.set({version: self.version});
   storage.local.set({settings: JSON.stringify(0)});
 
   self.browserExtension = true;
 
-  console.log("Cached Notes: " + db.exec("SELECT COUNT(*) FROM notes")[0].values[0][0]);
-  console.log("Cached Toasts: " + db.exec("SELECT COUNT(*) FROM toasts WHERE kind = 1")[0].values[0][0]);
+  console.log("Cached Notes: " + self.db.exec("SELECT COUNT(*) FROM notes")[0].values[0][0]);
+  console.log("Cached Toasts: " + self.db.exec("SELECT COUNT(*) FROM toasts WHERE kind = 1")[0].values[0][0]);
 
   // Start Nostr connections
   var sk = _privkey;
@@ -508,7 +513,7 @@ initSqlJs(config).then(function(SQL){
     var dirty = false;
 
     // Get the public keys of everyone who's written a toast
-    var stmt = db.prepare("SELECT * FROM toasts WHERE kind = 40");
+    var stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 40");
 
     while(stmt.step()) {
       const row = stmt.getAsObject();
@@ -517,7 +522,7 @@ initSqlJs(config).then(function(SQL){
     }
 
     // Get the public keys of everyone who's written a note
-    var stmt = db.prepare("SELECT * FROM notes WHERE kind = 42");
+    var stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 42");
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);
@@ -530,7 +535,7 @@ initSqlJs(config).then(function(SQL){
     console.log("userPubkeys: " + userPubkeys);
 
     // Fetch all known authors from the database, and load their profiles into memory
-    var stmt = db.prepare("SELECT * FROM notes WHERE kind = 0");
+    var stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 0");
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);
@@ -576,15 +581,15 @@ initSqlJs(config).then(function(SQL){
   self.getPopUps = function() {
     var popups = [];
     var users = {}
-    var stmt = db.prepare("SELECT * FROM notes WHERE kind = 0");
+    var stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 0");
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);
       users[event.pubkey] = event;
     }
 
-    //stmt = db.prepare("SELECT * FROM toasts WHERE kind = 42 AND url = $url ORDER BY created_at DESC");
-    stmt = db.prepare("SELECT * FROM toasts WHERE kind = 42 ORDER BY created_at DESC");
+    //stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 42 AND url = $url ORDER BY created_at DESC");
+    stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 42 ORDER BY created_at DESC");
     //stmt.bind({$url: mode.substring(4)});
 
     var row;
