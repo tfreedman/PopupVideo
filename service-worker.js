@@ -23,10 +23,9 @@ const readLocalStorage = async (key) => {
 var pubKey;
 var getPopUps = null;
 
-
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
-    sendResponse({private: _privkey, public: self.pubKey, npub: self.NostrTools.nip19.npubEncode(pubKey)});
+    sendResponse({privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey)});
   } else if (message.action === "getRelays") {
     sendResponse(getRelays());
   } else if (message.action === "getUsers") {
@@ -35,7 +34,6 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse(getPopUps());
   }
 });
-
 
 var users = {};
 self.settings = 0;
@@ -95,7 +93,7 @@ async function readDBToVariables() {
 }
 readDBToVariables();
 
-var pubKey;
+var pubkey;
 var snd = new Audio("/pop.mp3");
 self.lastDrawMode = null;
 
@@ -138,7 +136,7 @@ function exportSettings() {
 
   console.log(JSON.stringify(settings));
   // NIP07 unsupported
-  var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(_privkey).data, self.pubKey);
+  var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(_privkey).data, self.pubkey);
   var ciphertext = self.NostrTools.nip44.v2.encrypt(JSON.stringify(settings), convoKey, randomBytes(32));
   var e = {created_at: Math.floor(Date.now() / 1000), kind: 30078, tags: [['d', self.mode]], content: ciphertext};
   var note = self.NostrTools.finalizeEvent(e, Uint8Array.from(self.NostrTools.nip19.decode(_privkey).data));
@@ -229,8 +227,6 @@ initSqlJs(config).then(function(SQL){
       }
     });
 
-    // just use the room name as the raw value
-    var url = rValue // is this actually used anywhere?;
     var domain = JSON.parse(value["content"])["name"].toLowerCase();
 
     console.log('Inserting ' + value['id'] + ' - (' + domain + ') into Toasts DB...');
@@ -249,8 +245,8 @@ initSqlJs(config).then(function(SQL){
       if (existing_note.length == 0) {
         console.log('Inserting ' + value['id'] + ' into Notes DB...');
         self.users[value['pubkey']] = value;
-        if (value['pubkey'] == self.pubKey) {
-          displayProfile(self.pubKey);
+        if (value['pubkey'] == self.pubkey) {
+          displayProfile(self.pubkey);
         }
         db.run("INSERT INTO notes (id, created_at, pubkey, kind, note) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], value['kind'], note]);
         dirty = true;
@@ -259,8 +255,8 @@ initSqlJs(config).then(function(SQL){
         if (existing_note[0].values[0][0] < value['created_at']) {
           console.log('Updating ' + value['id'] + ' into Notes DB...');
           self.users[value['pubkey']] = value;
-          if (value['pubkey'] == self.pubKey) {
-            displayProfile(self.pubKey);
+          if (value['pubkey'] == self.pubkey) {
+            displayProfile(self.pubkey);
           }
           db.exec("UPDATE notes SET id = ?, created_at = ?, kind = ?, note = ? WHERE pubkey = ? AND kind = 0", [value['id'], value['created_at'], value['kind'], note, value['pubkey']]);
           dirty = true;
@@ -297,7 +293,7 @@ initSqlJs(config).then(function(SQL){
           // if the e Tag refers to an event we wrote
           // AND we didn't write the event
           // AND it isn't a root e Tag, because we don't care about rooms we created
-          if (tag[4] && tag[4] == self.pubKey && value["pubkey"] != self.pubKey && tag[3] != "root") {
+          if (tag[4] && tag[4] == self.pubkey && value["pubkey"] != self.pubkey && tag[3] != "root") {
             shouldAlert = true;
           }
         }
@@ -306,7 +302,7 @@ initSqlJs(config).then(function(SQL){
         // AND we didn't write the event
 
         if (tag[0] == "p") {
-          if (tag[1] == self.pubKey && value["pubkey"] != self.pubKey) {
+          if (tag[1] == self.pubkey && value["pubkey"] != self.pubkey) {
             shouldAlert = true;
           }
         }
@@ -315,27 +311,22 @@ initSqlJs(config).then(function(SQL){
       console.log('Inserting ' + value['id'] + ' into Notes DB...');
       db.run("INSERT OR IGNORE INTO notes (id, created_at, pubkey, kind, note) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], value['kind'], note]);
 
-      if (shouldAlert) {
-        db.run("INSERT OR IGNORE INTO alerts (id, created_at, pubkey, note, read) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], note, false]);
-        updateAlertsIndicator();
-      }
-
       // Update the room's timestamp on each message received
       db.run("UPDATE toasts SET created_at = MAX(created_at, ?) WHERE id = ?", [value['created_at'], parent]);
 
       // Mark a room as read if the message we just received came from us
-      if (value['pubkey'] == self.pubKey) {
+      if (value['pubkey'] == self.pubkey) {
         console.log('updating read indicator of ' + parent + ' to ' + value['created_at']);
         db.run("UPDATE toasts SET read_at = MAX(read_at, ?) WHERE id = ?", [value['created_at'], parent]);
       }
 
       dirty = true;
       console.log('Adding ' + value['id'] + ' to notes');
-    } else if (value['kind'] == 30078 && value["pubkey"] == self.pubKey) { // NIP-78 - arbitrary custom app data
+    } else if (value['kind'] == 30078 && value["pubkey"] == self.pubkey) { // NIP-78 - arbitrary custom app data
       var existing_timestamp = 0;
 
       var stmt = db.prepare("SELECT * FROM notes WHERE pubkey = $pubkey AND kind = 30078");
-      stmt.bind({$pubkey: self.pubKey});
+      stmt.bind({$pubkey: self.pubkey});
 
       while(stmt.step()) {
         const row = stmt.getAsObject();
@@ -368,7 +359,7 @@ initSqlJs(config).then(function(SQL){
 
             // Notes are encrypted using NIP-44. We need to first decrypt it, then parse it.
             // NIP07 unsupported
-            var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(_privkey).data, self.pubKey);
+            var convoKey = self.NostrTools.nip44.getConversationKey(self.NostrTools.nip19.decode(_privkey).data, self.pubkey);
             var plaintext = self.NostrTools.nip44.v2.decrypt(value['content'], convoKey);
             value['content'] = plaintext;
             importSettings(JSON.stringify(value));
@@ -396,7 +387,6 @@ initSqlJs(config).then(function(SQL){
     var db = new SQL.Database();
     db.run("CREATE TABLE IF NOT EXISTS toasts (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, domain TEXT NOT NULL, url TEXT NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL, favourite BOOLEAN NOT NULL, read_at INTEGER NOT NULL);");
     db.run("CREATE TABLE IF NOT EXISTS notes (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL);");
-    db.run("CREATE TABLE IF NOT EXISTS alerts (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, pubkey TEXT NOT NULL, note TEXT NOT NULL, read BOOLEAN NOT NULL);");
     db.run("CREATE INDEX idx_toasts_domain ON toasts (domain);")
   }
 
@@ -513,34 +503,6 @@ initSqlJs(config).then(function(SQL){
     return array.indexOf(value) === index;
   }
 
-  function updateAlertsIndicator() {
-    var alertsCount = db.exec("SELECT COUNT(*) FROM alerts WHERE read = false")[0].values[0][0];
-
-    if (alertsCount >= 1) {
-      console.log(alertsCount + ' - activating indicator');
-      document.querySelector('#alertsIndicator').classList.add('active');
-    } else {
-      console.log(alertsCount + ' - removing indicator');
-      document.querySelector('#alertsIndicator').classList.remove('active');
-    }
-  }
-
-  function toggleFavourite(id) {
-    var stmt = self.db.prepare("SELECT * FROM toasts WHERE id = $id");
-    stmt.bind({$id: id});
-    while(stmt.step()) {
-      var toast = stmt.getAsObject();
-      self.db.run("UPDATE toasts SET favourite = ? WHERE id = ?", [!toast.favourite, id]);
-    }
-    syncDatabase();
-    exportSettings();
-  }
-
-  function markToastAsRead(id) {
-    self.db.run("UPDATE toasts SET read_at = ? WHERE id = ?", [Math.floor(Date.now() / 1000), self.NostrTools.nip19.decode(id)["data"]]);
-    syncDatabase();
-  }
-
   function fetchAuthorInfo() {
     var userPubkeys = [];
     var dirty = false;
@@ -576,8 +538,8 @@ initSqlJs(config).then(function(SQL){
       // Load the rows from the DB first before loading from the network
       if (self.users[event.pubkey] === undefined) {
         self.users[event.pubkey] = event;
-        if (event.pubkey == self.pubKey) {
-          displayProfile(self.pubKey);
+        if (event.pubkey == self.pubkey) {
+          displayProfile(self.pubkey);
         }
       }
     }
@@ -601,9 +563,6 @@ initSqlJs(config).then(function(SQL){
             syncDatabase();
           }
           if (!self.hasFinishedLoading) {
-            if (!self.browserExtension) {
-              updateAlertsIndicator(); // If there are new alerts, update the UI to show them
-            }
             self.hasFinishedLoading = true;
           }
         },
@@ -662,48 +621,5 @@ initSqlJs(config).then(function(SQL){
     }
 
     return popups;
-  }
-
-  // New Root Posts
-  function newToast(node, params) {
-    // Grab the profile picture URL from the settings box for the time being
-    var avatarURL;
-    if (document.querySelector('#profile input[name="picture"]').value !== "") {
-      avatarURL = document.querySelector('#profile input[name="picture"]').value
-    } else {
-      avatarURL = 'circle-user.svg'
-    }
-
-    var submitText;
-    submitText = "Create";
-
-    const div = document.createElement('div');
-    div.classList.add('toast-new');
-
-    var innerHTML = `
-      <div>
-        <img class="avatar" src="${avatarURL}" />
-        <div class="content">
-          <form class="toast-new-form" autocomplete="off" action="">`
-
-          innerHTML += `<input type="text" name="url" value="" placeholder="Room or domain name" required></input>`
-
-innerHTML += `<button type="submit" class="toast-submit-button">${submitText}</button>
-          </form>
-        </div>
-      </div>
-    `
-
-    div.innerHTML = innerHTML;
-
-    var form = div.querySelector('form');
-    form.addEventListener('submit', (e) => newNoteSubmit(e));
-
-    var inputs = div.querySelectorAll("input");
-    inputs.forEach(i => {
-      i.addEventListener('keydown', (e) => validateToast(e, 1));
-    });
-
-    node.append(div);
   }
 });
