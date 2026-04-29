@@ -701,14 +701,30 @@ function displayPopUp(response) {
 
   var imageClass = '';
 
-  if (response.avatarURL === null) {
-    response.avatarURL = hashicon(response.pubkey).toDataURL();
+
+  var username = 'Unknown';
+  var avatarURL;
+  if (response._author !== undefined) {
+    var author = response._author;
+    var authorContent = JSON.parse(author.content);
+
+    if (authorContent && authorContent.picture) {
+      avatarURL = authorContent.picture;
+    } else {
+      avatarURL = hashicon(response.pubkey).toDataURL();
+      imageClass = 'hashicon';
+    }
+
+    if (authorContent && authorContent.displayName) {
+      username = authorContent.displayName;
+    }
+  } else {
+    avatarURL = hashicon(response.pubkey).toDataURL();
     imageClass = 'hashicon';
   }
 
   var epochTimestamp = new Date(0);
   epochTimestamp.setUTCSeconds(response.created_at);
-
   var date = null;
 
   date = document.createElement('div');
@@ -720,80 +736,44 @@ function displayPopUp(response) {
     </div>
   `
 
-  var author = null;
-
-  author = document.createElement('div');
-  author.classList.add('author');
-  author.innerHTML = `
-    <div>
-      <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#">
-        <div class="avatar">
-          <img src="${response.avatarURL}" class="${imageClass}"/>
-        </div>
-      </a>
-      <div class="content">
-        <header>
-          <div class="details">
-            <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><span class="username">${response.username}</span></a>
-          </div>
-          <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><div class="pubkey">${window.NostrTools.nip19.npubEncode(response.pubkey)}</div></a>
-        </header>
-      </div>
-    </div>
-  `
-
-  var links = author.querySelectorAll("a");
-  links.forEach(i => {
-    i.addEventListener('click', (e) => updateProfileModal(e, response.pubkey));
-  });
+  var note = JSON.parse(response.note);
+  var message = note.content;
 
   var innerHTML = `
     <div>
+      <div class="author">
+        <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#">
+          <div class="avatar">
+            <img src="${avatarURL}" class="${imageClass}"/>
+          </div>
+        </a>
+        <div class="content">
+          <header>
+            <div class="details">
+              <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><span class="username">${username}</span></a>
+            </div>
+            <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><div class="pubkey">${response._npub}</div></a>
+          </header>
+        </div>
+      </div>
       <div class="content">
-        <div class="created_at" style="${showTime}"><time data-tippy="${epochTimestamp.toUTCString()}" datetime="${epochTimestamp}">${(epochTimestamp.getHours() < 10 ? '0' : '') + epochTimestamp.getHours()}:${(epochTimestamp.getMinutes() < 10 ? '0' : '') + epochTimestamp.getMinutes()}</time></div>
+        <div class="created_at"><time data-tippy="${epochTimestamp.toUTCString()}" datetime="${epochTimestamp}">${(epochTimestamp.getHours() < 10 ? '0' : '') + epochTimestamp.getHours()}:${(epochTimestamp.getMinutes() < 10 ? '0' : '') + epochTimestamp.getMinutes()}</time></div>
         <div class="caption">`
 
-      if (isReply && referencedNote !== undefined) {
-        var replyUsername = 'Unknown';
-        var replyAvatarURL = null;
-        var imageClass = '';
-
-        if (params.users[referencedNote.pubkey]) {
-          var replyUser = JSON.parse(params.users[referencedNote.pubkey].content);
-          if (typeof replyUser.picture !== 'undefined') {
-            replyAvatarURL = replyUser.picture;
-          }
-          if (typeof replyUser.name !== 'undefined') {
-            replyUsername = replyUser.name;
-          }
-        }
-        if (replyAvatarURL === null) {
-          replyAvatarURL = hashicon(referencedNote.pubkey).toDataURL();
-          imageClass = 'hashicon';
-        }
-
-        innerHTML += `
-          <div class="context">
-            <div class="avatar">
-              <img src="${replyAvatarURL}" class="${imageClass}"/>
-            </div>
-            <span class="username">${replyUsername}</span> <span class="pubkey">(${window.NostrTools.nip19.npubEncode(referencedNote.pubkey)})</span>
-            <br /><a class="reply-context">${referencedNote.content.replace(/\n/g, '<br />')}</a>
-          </div>`
-      }
-
       innerHTML += `
-      ${linkifyAndEmbed(response.message.replace(/\n/g, '<br />'))}
+      ${linkifyAndEmbed(message.replace(/\n/g, '<br />'))}
         </div>
         <footer></footer>
-        <div class="tags hidden">
-          ${eTagString}
-        </div>
       </div>
     </div>
   `
 
   div.innerHTML = innerHTML;
+
+  var links = div.querySelectorAll(".author a");
+  links.forEach(i => {
+    i.addEventListener('click', (e) => updateProfileModal(e, response.pubkey));
+  });
 
   tippy('time', {
     content: (reference) => reference.dataset.tippy
@@ -819,7 +799,9 @@ function displayPopUp(response) {
 
 function displayPopUps(response) {
   document.querySelector('#modal-popup-content').innerHTML = '';
-  document.querySelector('#modal-popup-content').appendChild(displayPopUp(response));
+  for (const element of response) {
+    document.querySelector('#modal-popup-content').appendChild(displayPopUp(element));
+  }
 }
 
 function newNote(node, params) {
