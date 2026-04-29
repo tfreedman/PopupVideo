@@ -12,7 +12,9 @@ exportFunction(getPlayerState, window, {
 });
 
 function getVideoId() {
-  return document.querySelector('#watch7-content meta[itemprop="identifier"]').content;
+  if (document.querySelector('#watch7-content meta[itemprop="identifier"]') !== null) {
+    return document.querySelector('#watch7-content meta[itemprop="identifier"]').content;
+  }
 }
 exportFunction(getVideoId, window, {
   defineAs: "getVideoId",
