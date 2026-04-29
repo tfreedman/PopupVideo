@@ -15,15 +15,17 @@ async function writeClipboardText(text) {
   }
 }
 
-function updateProfileModal(event, pubKey) {
+function updateProfileModal(event) {
+  var p = event.target.closest(".author");
+
   parent = document.querySelector('#modal-profile .profile');
   parent.innerHTML = '';
 
   var hasUsername = false;
   var hasPicture = false;
 
-  if (window.users[pubKey] !== undefined) {
-    var profile = JSON.parse(window.users[pubKey].content);
+  if (p.dataset.content !== "") {
+    var profile = JSON.parse(p.dataset.content);
     if (profile.name !== undefined) {
       document.querySelector('#modal-profile #modal-profile-title').innerHTML = profile.name;
       hasUsername = true;
@@ -46,7 +48,6 @@ function updateProfileModal(event, pubKey) {
       parent.appendChild(about);
     }
     if (profile.banner !== undefined) {
-      window.profile = profile;
       document.querySelector('#modal-profile .banner').style.backgroundImage = "url('" + profile.banner + "')";
     }
     if (profile.picture !== undefined) {
@@ -62,7 +63,9 @@ function updateProfileModal(event, pubKey) {
     document.querySelector('#modal-profile #modal-profile-title').innerHTML = 'Unknown';
   }
 
-  document.querySelector('#modal-profile .pubkey').innerHTML = window.npub;
+  document.querySelector('#modal-profile .pubkey').innerHTML = p.dataset.npub;
+  MicroModal.close('modal-popup');
+  MicroModal.show('modal-profile');
 }
 
 function createProfilePopUp() {
@@ -461,7 +464,7 @@ waitForEl("#movie_player").then(() => {
   });
 
   browser.runtime.sendMessage({ action: "getPopUps" }, response => {
-    displayPopUps(response);
+    displayPopUps(response.popups);
   });
 
   browser.runtime.sendMessage({ action: "getRelays" }, response => {
@@ -512,7 +515,7 @@ function displayProfile(pubKey) {
           //document.querySelector('#topbar nav .avatar').src = 'circle-user.svg' FIXME
         }
       }
-      console.log(users[pubKey]);
+      console.log(window.users[pubKey]);
     } else {
       console.log("No profile data :(");
     }
@@ -704,6 +707,8 @@ function displayPopUp(response) {
 
   var username = 'Unknown';
   var avatarURL;
+  var bannerURL;
+
   if (response._author !== undefined) {
     var author = response._author;
     var authorContent = JSON.parse(author.content);
@@ -713,6 +718,10 @@ function displayPopUp(response) {
     } else {
       avatarURL = hashicon(response.pubkey).toDataURL();
       imageClass = 'hashicon';
+    }
+
+    if (authorContent && authorContent.banner) {
+      bannerURL = authorContent.banner;
     }
 
     if (authorContent && authorContent.displayName) {
@@ -770,9 +779,20 @@ function displayPopUp(response) {
 
   div.innerHTML = innerHTML;
 
+  var author = div.querySelector('.author');
+  author.dataset.npub = response._npub;
+  author.dataset.username = username;
+  author.dataset.avatar = avatarURL;
+  author.dataset.banner = bannerURL;
+  author.dataset.pubkey = response.pubkey;
+  if (response._author !== undefined) {
+    author.dataset.content = JSON.stringify(authorContent);
+    author.dataset.raw = JSON.stringify(response._author);
+  }
+
   var links = div.querySelectorAll(".author a");
   links.forEach(i => {
-    i.addEventListener('click', (e) => updateProfileModal(e, response.pubkey));
+    i.addEventListener('click', (e) => updateProfileModal(e));
   });
 
   tippy('time', {

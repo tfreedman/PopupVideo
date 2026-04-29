@@ -386,6 +386,44 @@ body {
       .note:nth-child(odd) {background: #DDD}
     }
 
+    #modal-profile-content {
+      .modal__title {
+        margin: -40px 0 40px;
+      }
+
+      text-align: center;
+
+      .banner {
+        width: 420px;
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+        padding-top: 20px;
+      }
+
+      .pubkey {
+        font-size: 12px;
+      }
+
+      .avatar {
+        object-fit: cover;
+        border-radius: 138px;
+        overflow: hidden;
+        height: 138px;
+        min-height: 138px;
+        min-width: 138px;
+        width: 138px;
+        border: 5px solid #FFF;
+        margin: 0 auto;
+
+        & > img {
+          &.hashicon {transform: scale(1.25)}
+          width: 128px;
+          height: 128px;
+        }
+      }
+    }
+
     #modal-account-content {
       @media screen and (min-width: 980px) {
         display: flex;
@@ -464,44 +502,6 @@ body {
               &:focus {outline: none}
             }
           }
-        }
-      }
-    }
-
-    #modal-profile {
-      .modal__title {
-        margin: -40px 0 40px;
-      }
-
-      text-align: center;
-
-      .banner {
-        width: 420px;
-        height: 200px;
-        background-size: cover;
-        background-position: center;
-        padding-top: 20px;
-      }
-
-      .pubkey {
-        font-size: 12px;
-      }
-
-      .avatar {
-        object-fit: cover;
-        border-radius: 138px;
-        overflow: hidden;
-        height: 138px;
-        min-height: 138px;
-        min-width: 138px;
-        width: 138px;
-        border: 5px solid #FFF;
-        margin: 0 auto;
-
-        & > img {
-          &.hashicon {transform: scale(1.25)}
-          width: 128px;
-          height: 128px;
         }
       }
     }
