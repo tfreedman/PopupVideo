@@ -123,66 +123,13 @@ body {
         a {color: #666; text-decoration: none}
       }
     }
-
-    #yak, #new, #alerts {
-      & > .toasts-container > .toasts > .toast {max-width: 100% !important}
-      & > .toasts-container > .toasts > .children {
-        margin-left: 0;
-      }
-
-      .toasts .favourites {font-size: 24px; cursor: pointer}
-      .toasts .favourites + h2 {display: inline}
-
-      .toasts-loading {
-        &.active {display: visible;}
-        display: none;
-        color: #00F;
-        font-size: 20px;
-        text-align: center;
-      }
-
-      .toasts-empty {
-        &.active {display: inherit;}
-        display: none;
-      }
-
-      .toast {
-        max-width: 480px;
-        padding: 20px 0;
-
-        h2 + p {
-          margin-left: 20px;
-        }
-
-        p, p a {
-         color: #fff;
-        }
-
-        p {
-          margin: 0;
-
-          br {display: none}
-        }
-      }
-
-      p.filters {position: relative; z-index: 2}
-
-      .date {text-align: center; padding: 5px 0; line-height: 1em}
-    }
   }
 
-  .toast-new {margin: 10px !important}
+  .note {
+    width: 500px;
 
-  .toast-new, .note, .author {
-    margin: 10px 0 10px 40px;
-
-    &.read {
-      opacity: 0.5;
-    }
-
-    &.author {
+    .author {
       margin: 0;
-      margin-top: -25px;
 
       .avatar {
         position: relative;
@@ -190,40 +137,17 @@ body {
       }
 
       .content {
-        position: relative;
-        top: 25px;
-        left: -10px;
-        width: calc(100% - 50px);
-        padding-left: 10px;
         overflow: hidden;
       }
+
+      .pubkey, .created_at {
+        display: none
+      }
     }
-
-    &.toast-new > div {
-      background: none;
-      box-shadow: none;
-
-      &:hover {background: none}
-    }
-
-    &.author > div {
-      background: none;
-      box-shadow: none;
-      margin: 0;
-      padding: 0;
-      align-items: center;
-      &:hover {background: none}
-    }
-
-    &.author + div.note {padding: 0 0 0 40px; margin: 0}
 
     &:hover footer a {
       transition: all 0.5s;
       opacity: 0.2;
-    }
-
-    .toasts {
-      & > div:last-child {margin-bottom: 0}
     }
 
     button {
@@ -231,16 +155,7 @@ body {
       margin-left: 10px;
     }
 
-    &.highlight > div {background: #fff0f4 !important}
-
     & > div {
-      background: #fff;
-      margin-bottom: 15px;
-      box-shadow: 0px 2px 0px 0px #2d6084;
-      transition: all 0.5s;
-      background: linear-gradient(to right, #fb64b6 0%, #fb64b6 80px, #FFFFFFCC 80px, #FFFFFFCC 100%) repeat-y scroll 0 0 rgba(0, 0, 0, 0);
-      &:hover {background: linear-gradient(to right, #fb64b6 0%, #fb64b6 80px, #FFFFFFFF 80px, #FFFFFFFF 100%) repeat-y scroll 0 0 rgba(0, 0, 0, 0)}
-      border-radius: 15px;
       display: flex;
 
       form {
@@ -253,63 +168,7 @@ body {
         .middle {
           flex: 1;
           padding: 10px;
-          background: #fff;
           border-radius: 20px;
-        }
-
-        .reply-details {
-          background: rgba(255, 255, 255, 0.3);
-          border-radius: 10px;
-          padding: 10px;
-
-          p.heading {
-            margin-top: 0;
-            font-weight: bold;
-          }
-
-          .reply-cancel {
-            width: 20px;
-            height: 20px;
-            line-height: 0;
-            font-size: 18px;
-            padding: 0 0 5px;
-            margin: 0;
-          }
-
-          .context {
-            border-left: 2px solid #000;
-            padding-left: 5px;
-
-            .username {font-weight: bold}
-            .pubkey {color: #999}
-
-            .content {
-              img, iframe {
-                max-width: min(50px, 100%);
-                max-height: min(50px, 100%);
-              }
-            }
-
-            .avatar {
-              width: 20px !important;
-              min-height: 20px;
-              min-width: 20px;
-              border: 1px solid #FFF;
-              object-fit: cover;
-              border-radius: 20px;
-              overflow: hidden;
-              height: 20px !important;
-              margin-right: 0;
-              display: inline-block;
-              vertical-align: top;
-
-             img {
-                &.hashicon {transform: scale(1.25)}
-                width: 20px;
-                height: 20px;
-              }
-            }
-          }
         }
 
         #show-emoji-picker-button {
@@ -386,7 +245,7 @@ body {
         flex-direction: row;
         align-items: start;
         padding: 2px;
-        width: 100%;
+        width: 400px;
 
         .caption {
           flex-grow: 1;
@@ -520,6 +379,13 @@ body {
       p {max-width: 400px}
     }
 
+    #modal-popup-content {
+      max-height: 500px;
+
+      .note:nth-child(even) {background: #FFF}
+      .note:nth-child(odd) {background: #DDD}
+    }
+
     #modal-account-content {
       @media screen and (min-width: 980px) {
         display: flex;
@@ -531,25 +397,25 @@ body {
         }
       }
 
-      #profile .avatar {
-        object-fit: cover;
-        border-radius: 74px;
-        overflow: hidden;
-        height: 74px;
-        min-height: 74px;
-        min-width: 74px;
-        width: 74px;
-        border: 5px solid #FFF;
-        margin: 0 auto;
-        display: block;
-      }
-
       #profile, #relays, #keys {
         width: 300px;
         display: flex;
         color: #160b39;
         padding: 10px;
         margin: 10px;
+
+        .avatar {
+          object-fit: cover;
+          border-radius: 74px;
+          overflow: hidden;
+          height: 74px;
+          min-height: 74px;
+          min-width: 74px;
+          width: 74px;
+          border: 5px solid #FFF;
+          margin: 0 auto;
+          display: block;
+        }
 
         form {
           width: 100%;
