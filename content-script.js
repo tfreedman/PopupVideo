@@ -138,6 +138,7 @@ function createNewPopUpPopUp() {
     </div>
   `;
   document.querySelector('body').appendChild(div);
+  newNote(document.querySelector('#modal-new-popup-content'), null);
 }
 
 function createAccountPopUp() {
@@ -413,10 +414,12 @@ function updateProfile(event) {
     content: JSON.stringify(content)
   }
 
-  // NIP07 unsupported
-  var event = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(window.privkey).data))
-  console.log("signed event without nip07: " + event);
-  uploadProfileEvent(event);
+  browser.runtime.sendMessage({ action: "signNote", event: e, privkey: document.querySelector('#keys input[name="privkey"]').value }, response => {
+    var note = response.note;
+    console.log('Received signed note back from service worker: ' + JSON.stringify(note));
+
+    uploadProfileEvent(note);
+  });
 }
 
 function displayRelays(relays, isDebuggingEnabled) {
@@ -595,10 +598,12 @@ const signNoteForFileUpload = async(files, message, kind, urlBox) => {
     var tags = [["t","upload"], ["expiration", (Math.floor(Date.now() / 1000) + 60).toString()], ["x", hash]];
     var e = {created_at: Math.floor(Date.now() / 1000), kind: 24242, tags: tags, content: ""};
 
-    // NIP07 unsupported
-    var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(window.privkey).data));
-    console.log("signed note without nip07: " + JSON.stringify(note));
-    uploadFile(formData, message, urlBox, JSON.stringify(note));
+    browser.runtime.sendMessage({ action: "signNote", event: e, privkey: document.querySelector('#keys input[name="privkey"]').value }, response => {
+      var note = response.note;
+      console.log('Received signed note back from service worker: ' + JSON.stringify(note));
+
+      uploadFile(formData, message, urlBox, JSON.stringify(note));
+    });
   });
 };
 
@@ -679,44 +684,43 @@ function newNoteSubmit(event) {
     var e = {created_at: Math.floor(Date.now() / 1000), kind: 42, tags: tags, content: data.message.value};
   }
 
-  // NIP07 unsupported
-  var note = window.NostrTools.finalizeEvent(e, Uint8Array.from(window.NostrTools.nip19.decode(window.privkey).data))
-  console.log("signed note without nip07: " + note);
-  uploadNote(data, note, data.parentElement.parentElement.parentElement);
-}
+  browser.runtime.sendMessage({ action: "signNote", event: e, privkey: document.querySelector('#keys input[name="privkey"]').value }, response => {
+    console.log('Received signed note back from service worker:')
+    var note = response.note;
 
-function uploadNote(data, note, parent) {
-  console.log("Sending " + JSON.stringify(note));
-  Promise.any(window.pool.publish(relays, note)).then(relay => {
-    // When we upload a note, normally we'd have to keep track of state.
-    // If there are no messages, we'd have to remove the message asking you to be the first.
-    // We'd also have to update the number of messages, etc. Or, we can cheat and just re-render everything.
+    console.log(note);
 
-    var isToast = false;
-    if (window.mode == "PopUpVideo") {
-      if (note["kind"] == 40) {
-        note["tags"].forEach((tag) => {
-          if (tag[0] == "t" && tag[1].toLowerCase().startsWith('popupvideo')) {
-            isToast = true;
+    browser.runtime.sendMessage({ action: "uploadNote", note: note}, response => {
+
+      console.log("Sending " + JSON.stringify(note));
+      Promise.any(window.pool.publish(relays, note)).then(relay => {
+        // When we upload a note, normally we'd have to keep track of state.
+        // If there are no messages, we'd have to remove the message asking you to be the first.
+        // We'd also have to update the number of messages, etc. Or, we can cheat and just re-render everything.
+
+        var isToast = false;
+        if (window.mode == "PopUpVideo") {
+          if (note["kind"] == 40) {
+            note["tags"].forEach((tag) => {
+              if (tag[0] == "t" && tag[1].toLowerCase().startsWith('popupvideo')) {
+                isToast = true;
+              }
+            });
           }
-        });
-      }
-    }
+        }
 
-    if (isToast) {
-      window.importToast(note, window.hasFinishedLoading);
-    } else {
-      window.importNote(note, window.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
-    }
+        if (isToast) {
+          window.importToast(note, window.hasFinishedLoading);
+        } else {
+          window.importNote(note, window.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
+        }
 
-    if (window.mode == "PopUpVideo") {
-      if (!isToast && note["kind"] != 30078)  {
-        document.querySelector('#container').scrollTo({left: 0, top: document.querySelector('#container').scrollHeight, behavior: "smooth"});
-      }
-    }
-    if (data) {
-      data.reset();
-    }
+        if (data) {
+          data.reset();
+        }
+      });
+
+    });
   });
 }
 
@@ -856,7 +860,7 @@ function newNote(node, params) {
   var url = '';
   var eTags = [];
 
-  if (params.eTags !== undefined) {
+  if (params && params.eTags !== undefined) {
     // This is a reply
     eTags = params.eTags;
   }
