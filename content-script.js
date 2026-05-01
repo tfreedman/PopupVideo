@@ -119,6 +119,27 @@ function createPopUpPopUp() {
   document.querySelector('body').appendChild(div);
 }
 
+function createNewPopUpPopUp() {
+  var div = document.createElement("div");
+  div.classList.add('modal');
+  div.classList.add('micromodal-slide');
+  div.id = "modal-new-popup";
+  div.ariaHidden = "true";
+  div.innerHTML = `
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-new-popup-title">
+        <header class="modal__header">
+          <div>PopUps</div>
+          <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+        </header>
+        <main class="modal__content" id="modal-new-popup-content">
+        </main>
+      </div>
+    </div>
+  `;
+  document.querySelector('body').appendChild(div);
+}
+
 function createAccountPopUp() {
   var div = document.createElement("div");
   div.classList.add('modal');
@@ -430,6 +451,16 @@ waitForEl("#movie_player").then(() => {
     account.classList.add('modal-account-button');
     account.dataset.micromodalTrigger = "modal-account";
     document.querySelector('#center').appendChild(account);
+  }
+
+
+  if (document.querySelector('#center .modal-new-popup-button') === null) {
+    createNewPopUpPopUp();
+    var newPopUp = document.createElement("a");
+    newPopUp.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M256 512a256 256 0 1 0 0-512 256 256 0 1 0 0 512zM232 344l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z"/></svg> New</span>'
+    newPopUp.classList.add('modal-new-popup-button');
+    newPopUp.dataset.micromodalTrigger = "modal-new-popup";
+    document.querySelector('#center').appendChild(newPopUp);
   }
 
   if (document.querySelector('#center .modal-profile-button') === null) {
