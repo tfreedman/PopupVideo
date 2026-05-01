@@ -22,6 +22,7 @@ const readLocalStorage = async (key) => {
 
 var pubKey;
 var getPopUps = null;
+var signNote = null;
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
@@ -32,6 +33,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse(self.users);
   } else if (message.action === "getPopUps") {
     sendResponse(getPopUps());
+  } else if (message.action === "signNote") {
+    sendResponse(signNote(message));
   }
 });
 
@@ -94,8 +97,6 @@ async function readDBToVariables() {
 readDBToVariables();
 
 var pubkey;
-var snd = new Audio("/pop.mp3");
-self.lastDrawMode = null;
 
 config = {
   locateFile: filename => `${filename}`
@@ -578,6 +579,10 @@ initSqlJs(config).then(function(SQL){
     )
   }
 
+  self.signNote = function(event, privkey) {
+    return window.NostrTools.finalizeEvent(event, Uint8Array.from(window.NostrTools.nip19.decode(privkey).data));
+  }
+
   self.getPopUps = function() {
     var popups = [];
     var users = {}
@@ -622,6 +627,10 @@ initSqlJs(config).then(function(SQL){
       if (false) {
         continue; // Cancel rendering if the parent isn't actually an exact match.
       }
+
+      row._author = users[row.pubkey];
+      row._npub = self.NostrTools.nip19.npubEncode(row.pubkey);
+
       popups.push(row);
     }
 
