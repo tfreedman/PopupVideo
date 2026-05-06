@@ -26,6 +26,8 @@ var getPopUps = null;
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
     sendResponse({privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey)});
+  } else if (message.action === "setNostrKeys") {
+    sendResponse(setNotrKeys(message.privkey));
   } else if (message.action === "getRelays") {
     sendResponse(getRelays());
   } else if (message.action === "getUsers") {
@@ -36,6 +38,8 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse(signNote(message.event, message.privkey));
   } else if (message.action === "uploadNote") {
     sendResponse(uploadNote(message.note));
+  } else if (message.action === "decodeNostrKeys") {
+    sendResponse(self.NostrTools.nip19.decode(message.keys);
   }
 });
 
@@ -383,76 +387,80 @@ initSqlJs(config).then(function(SQL){
     }
   }
 
-  var dbVersion = _version;
-  var dbstr = _database;
+  self.init = function() {
+    var dbVersion = _version;
+    var dbstr = _database;
 
-  if (dbstr && dbVersion !== null && dbVersion == self.version) {
-    console.log("Loading existing database - version numbers match");
-    self.db = new SQL.Database(toBinArray(dbstr));
-  } else {
-    console.log("Database version mismatch or undefined - creating a new DB");
-    self.db = new SQL.Database();
-    self.db.run("CREATE TABLE IF NOT EXISTS toasts (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, domain TEXT NOT NULL, url TEXT NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL, favourite BOOLEAN NOT NULL, read_at INTEGER NOT NULL);");
-    self.db.run("CREATE TABLE IF NOT EXISTS notes (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL);");
-    self.db.run("CREATE INDEX idx_toasts_domain ON toasts (domain);")
-  }
-
-  var dbstr = toBinString(self.db.export());
-  storage.local.set({database: dbstr});
-  storage.local.set({version: self.version});
-  storage.local.set({settings: JSON.stringify(0)});
-
-  self.browserExtension = true;
-
-  console.log("Cached Notes: " + self.db.exec("SELECT COUNT(*) FROM notes")[0].values[0][0]);
-  console.log("Cached Toasts: " + self.db.exec("SELECT COUNT(*) FROM toasts WHERE kind = 1")[0].values[0][0]);
-
-  // Start Nostr connections
-  var sk = _privkey;
-  var pk;
-
-  if (sk === null) {
-    _privkey = self.NostrTools.nip19.nsecEncode(self.NostrTools.generateSecretKey());
-    storage.local.set({privkey: _privkey});
-  }
-  sk = Uint8Array.from(self.NostrTools.nip19.decode(_privkey).data);
-  self.pubkey = self.NostrTools.getPublicKey(sk);
-  self.pool = new self.NostrTools.SimplePool({enableReconnect: true, enablePing: true})
-  self.relays = getRelays().relays;
-  var dirty = false;
-
-  if (pk) {
-    //displayProfile(pk); #FIXME
-  }
-
-  var filter;
-  var kind;
-  kind = 40;
-  filter = {kinds: [kind], '#t': ["yakclub", "trollbox"], since: 1750046400}
-
-  var h = self.pool.subscribeMany(
-    self.relays,[
-      filter
-    ],
-    {
-      onevent(event) {
-        toggleConnectionState(true);
-        if (event && event.pubkey && event.content && event.kind == 40 && self.NostrTools.verifyEvent(event, event.pubkey) && event.created_at > 1750046400) {
-          importToast(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
-          dirty = true;
-        }
-      },
-      oneose() {
-        if (dirty) {
-          syncDatabase();
-        }
-        fetchNotes();
-      },
-      onclose() {
-        toggleConnectionState(false);
-      }
+    if (dbstr && dbVersion !== null && dbVersion == self.version) {
+      console.log("Loading existing database - version numbers match");
+      self.db = new SQL.Database(toBinArray(dbstr));
+    } else {
+      console.log("Database version mismatch or undefined - creating a new DB");
+      self.db = new SQL.Database();
+      self.db.run("CREATE TABLE IF NOT EXISTS toasts (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, domain TEXT NOT NULL, url TEXT NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL, favourite BOOLEAN NOT NULL, read_at INTEGER NOT NULL);");
+      self.db.run("CREATE TABLE IF NOT EXISTS notes (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL);");
+      self.db.run("CREATE INDEX idx_toasts_domain ON toasts (domain);")
     }
-  )
+
+    var dbstr = toBinString(self.db.export());
+    storage.local.set({database: dbstr});
+    storage.local.set({version: self.version});
+    storage.local.set({settings: JSON.stringify(0)});
+
+    self.browserExtension = true;
+
+    console.log("Cached Notes: " + self.db.exec("SELECT COUNT(*) FROM notes")[0].values[0][0]);
+    console.log("Cached Toasts: " + self.db.exec("SELECT COUNT(*) FROM toasts WHERE kind = 1")[0].values[0][0]);
+
+    // Start Nostr connections
+    var sk = _privkey;
+    var pk;
+
+    if (sk === null) {
+      _privkey = self.NostrTools.nip19.nsecEncode(self.NostrTools.generateSecretKey());
+      storage.local.set({privkey: _privkey});
+    }
+    sk = Uint8Array.from(self.NostrTools.nip19.decode(_privkey).data);
+    self.pubkey = self.NostrTools.getPublicKey(sk);
+    self.pool = new self.NostrTools.SimplePool({enableReconnect: true, enablePing: true})
+    self.relays = getRelays().relays;
+    var dirty = false;
+
+    if (pk) {
+      //displayProfile(pk); #FIXME
+    }
+
+    var filter;
+    var kind;
+    kind = 40;
+    filter = {kinds: [kind], '#t': ["yakclub", "trollbox"], since: 1750046400}
+
+    var h = self.pool.subscribeMany(
+      self.relays,[
+        filter
+      ],
+      {
+        onevent(event) {
+          toggleConnectionState(true);
+          if (event && event.pubkey && event.content && event.kind == 40 && self.NostrTools.verifyEvent(event, event.pubkey) && event.created_at > 1750046400) {
+            importToast(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
+            dirty = true;
+          }
+        },
+        oneose() {
+          if (dirty) {
+            syncDatabase();
+          }
+          fetchNotes();
+        },
+        onclose() {
+          toggleConnectionState(false);
+        }
+      }
+    )
+  }
+
+  init();
 
   function fetchNotes() {
     var filters = [];
@@ -609,6 +617,13 @@ initSqlJs(config).then(function(SQL){
 
       return true;
     });
+  }
+
+  self.setNostrKeys = function(privkey) {
+    storage.local.set({privkey: privkey});
+    storage.local.set({version: 0}); // This will mismatch with the existing DB version, causing it to be blown away on reload
+    init();
+    return {privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey)};
   }
 
   self.getPopUps = function() {

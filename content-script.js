@@ -296,22 +296,23 @@ function createAccountPopUp() {
   }
 
   function cancelUpdateKeys() {
-    sk = Uint8Array.from(window.NostrTools.nip19.decode(window.privkey).data);
-    document.querySelector('#keys input[name="privkey"]').value = window.privkey;
-    document.querySelector('#keys input[name="privkey"]').disabled = true;
-    document.querySelector('#keys .edit-container').style.display = 'block'
-    document.querySelector('#keys .submit-container').style.display = 'none';
+    browser.runtime.sendMessage({ action: "decodeNostrKeys", keys: window.privkey}, response => {
+      sk = Uint8Array.from(response.data);
+      document.querySelector('#keys input[name="privkey"]').value = window.privkey;
+      document.querySelector('#keys input[name="privkey"]').disabled = true;
+      document.querySelector('#keys .edit-container').style.display = 'block'
+      document.querySelector('#keys .submit-container').style.display = 'none';
+    });
   }
 
   function updateKeys() {
     try { // Basic validation - if we can generate an npub from the input, it's a valid key
-      if (window.NostrTools.nip19.decode(document.querySelector('#keys input[name="privkey"]').value).data) {
-        // storage.local.set("privkey", document.querySelector('#keys input[name="privkey"]').value); FIXME
-        // storage.local.set("version", 0); // This will mismatch with the existing DB version, causing it to be blown away on reload FIXME
+      browser.runtime.sendMessage({ action: "decodeNostrKeys", keys: document.querySelector('#keys input[name="privkey"]').value}, response => {
+      if (response.data) {
         document.querySelector('#keys .edit-container').style.display = 'block'
         document.querySelector('#keys .submit-container').style.display = 'none';
         window.location.reload();
-      }
+      });
     } catch (e) {
       alert('Invalid nsec');
     }
@@ -481,8 +482,16 @@ waitForEl("#movie_player").then(() => {
 
   modalInitialization();
 
-  // Test code
   browser.runtime.sendMessage({ action: "getNostrKeys" }, response => {
+    window.privkey = response.privkey;
+    window.pubkey = response.pubkey;
+    window.npub = response.npub;
+    document.querySelector('#keys input[name="privkey"]').value = window.privkey;
+    document.querySelector('#keys input[name="privkey"]').disabled = true;
+    displayProfile(window.pubkey);
+  });
+
+  browser.runtime.sendMessage({ action: "setNostrKeys" }, response => {
     window.privkey = response.privkey;
     window.pubkey = response.pubkey;
     window.npub = response.npub;
