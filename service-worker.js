@@ -22,7 +22,6 @@ const readLocalStorage = async (key) => {
 
 var pubKey;
 var getPopUps = null;
-var signNote = null;
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
@@ -34,7 +33,9 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === "getPopUps") {
     sendResponse(getPopUps());
   } else if (message.action === "signNote") {
-    sendResponse(signNote(message));
+    sendResponse(signNote(message.event, message.privkey));
+  } else if (message.action === "uploadNote") {
+    sendResponse(uploadNote(message.note));
   }
 });
 
@@ -580,7 +581,34 @@ initSqlJs(config).then(function(SQL){
   }
 
   self.signNote = function(event, privkey) {
-    return window.NostrTools.finalizeEvent(event, Uint8Array.from(window.NostrTools.nip19.decode(privkey).data));
+    console.log('Hello from signNote!');
+    return self.NostrTools.finalizeEvent(event, Uint8Array.from(self.NostrTools.nip19.decode(privkey).data));
+  }
+
+  self.uploadNote = function(note) {
+    console.log("Sending " + JSON.stringify(note));
+    Promise.any(self.pool.publish(relays, note)).then(relay => {
+      // When we upload a note, normally we'd have to keep track of state.
+      // If there are no messages, we'd have to remove the message asking you to be the first.
+      // We'd also have to update the number of messages, etc. Or, we can cheat and just re-render everything.
+
+      var isToast = false;
+      if (note["kind"] == 40) {
+        note["tags"].forEach((tag) => {
+          if (tag[0] == "t" && tag[1].toLowerCase().startsWith('popupvideo')) {
+            isToast = true;
+          }
+        });
+      }
+
+      if (isToast) {
+        self.importToast(note);
+      } else {
+        self.importNote(note);
+      }
+
+      return true;
+    });
   }
 
   self.getPopUps = function() {

@@ -658,68 +658,21 @@ function newNoteSubmit(event) {
   event.preventDefault();
 
   var data = event.target;
+  var url = 'test';
+  var e = {created_at: Math.floor(Date.now() / 1000), kind: 40, tags: [['r', url], ['t', 'popupvideo']], content: JSON.stringify({'name': url})};
 
-  // If you're replying to a note with a global reply box, the tags from the quoted note can be found in the global reply-details div
-  // If you're replying to a note with a local reply box,  the tags from the quoted note are already in the local form
-  if (event.target.querySelectorAll(".reply-details .tags input[name='e']").length > 0) {
-    var e = event.target.querySelectorAll(".reply-details .tags input[name='e']");
-  } else {
-    var e = event.target.querySelectorAll("input[name='e']");
-  }
+  console.log('event: ' + e);
+  var privkey = document.querySelector('#keys input[name="privkey"]').value;
+  console.log('privkey: ' + privkey);
 
-  if (data.url.value != "") {
-    // Root Note
-    if (window.mode == "Toastr") { // Root toasts exist for specific URLs
-      var e = {created_at: Math.floor(Date.now() / 1000), kind: 1, tags: [['r', data.url.value], ['t', 'toastr'], ['subject', data.title.value]], content: data.title.value};
-    } else if (window.mode == "PopUpVideo") { // Channels can map to domain names, but there's no validations
-      var e = {created_at: Math.floor(Date.now() / 1000), kind: 40, tags: [['r', data.url.value], ['t', 'popupvideo']], content: JSON.stringify({'name': data.url.value})};
-    }
-  } else if (e[0] && (e[0].dataset.marker == "reply" || e[0].dataset.marker == "root")) {
-    // Reply
-    var tags = [];
-    e.forEach((el) => {
-      tags.push(['e', el.dataset.eventId, el.dataset.relayUrl, el.dataset.marker, el.dataset.pubkey]);
-    });
-    console.log('tags: ' + tags);
-    var e = {created_at: Math.floor(Date.now() / 1000), kind: 42, tags: tags, content: data.message.value};
-  }
+  browser.runtime.sendMessage({ action: "signNote", event: e, privkey: privkey }, response => {
+    console.log('Received signed note back from service worker:');
+    console.log(response);
 
-  browser.runtime.sendMessage({ action: "signNote", event: e, privkey: document.querySelector('#keys input[name="privkey"]').value }, response => {
-    console.log('Received signed note back from service worker:')
-    var note = response.note;
-
-    console.log(note);
-
-    browser.runtime.sendMessage({ action: "uploadNote", note: note}, response => {
-
-      console.log("Sending " + JSON.stringify(note));
-      Promise.any(window.pool.publish(relays, note)).then(relay => {
-        // When we upload a note, normally we'd have to keep track of state.
-        // If there are no messages, we'd have to remove the message asking you to be the first.
-        // We'd also have to update the number of messages, etc. Or, we can cheat and just re-render everything.
-
-        var isToast = false;
-        if (window.mode == "PopUpVideo") {
-          if (note["kind"] == 40) {
-            note["tags"].forEach((tag) => {
-              if (tag[0] == "t" && tag[1].toLowerCase().startsWith('popupvideo')) {
-                isToast = true;
-              }
-            });
-          }
-        }
-
-        if (isToast) {
-          window.importToast(note, window.hasFinishedLoading);
-        } else {
-          window.importNote(note, window.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
-        }
-
-        if (data) {
-          data.reset();
-        }
-      });
-
+    browser.runtime.sendMessage({ action: "uploadNote", note: response}, r => {
+      if (data) {
+        data.reset();
+      }
     });
   });
 }
