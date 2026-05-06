@@ -308,10 +308,21 @@ function createAccountPopUp() {
   function updateKeys() {
     try { // Basic validation - if we can generate an npub from the input, it's a valid key
       browser.runtime.sendMessage({ action: "decodeNostrKeys", keys: document.querySelector('#keys input[name="privkey"]').value}, response => {
-      if (response.data) {
-        document.querySelector('#keys .edit-container').style.display = 'block'
-        document.querySelector('#keys .submit-container').style.display = 'none';
-        window.location.reload();
+        if (response.data) {
+          document.querySelector('#keys .edit-container').style.display = 'block'
+          document.querySelector('#keys .submit-container').style.display = 'none';
+
+          browser.runtime.sendMessage({ action: "setNostrKeys" }, response => {
+            window.privkey = response.privkey;
+            window.pubkey = response.pubkey;
+            window.npub = response.npub;
+            document.querySelector('#keys input[name="privkey"]').value = window.privkey;
+            document.querySelector('#keys input[name="privkey"]').disabled = true;
+            displayProfile(window.pubkey);
+            window.location.reload();
+          });
+
+        }
       });
     } catch (e) {
       alert('Invalid nsec');
@@ -483,15 +494,6 @@ waitForEl("#movie_player").then(() => {
   modalInitialization();
 
   browser.runtime.sendMessage({ action: "getNostrKeys" }, response => {
-    window.privkey = response.privkey;
-    window.pubkey = response.pubkey;
-    window.npub = response.npub;
-    document.querySelector('#keys input[name="privkey"]').value = window.privkey;
-    document.querySelector('#keys input[name="privkey"]').disabled = true;
-    displayProfile(window.pubkey);
-  });
-
-  browser.runtime.sendMessage({ action: "setNostrKeys" }, response => {
     window.privkey = response.privkey;
     window.pubkey = response.pubkey;
     window.npub = response.npub;
@@ -682,6 +684,9 @@ function newNoteSubmit(event) {
       if (data) {
         data.reset();
       }
+      browser.runtime.sendMessage({ action: "getPopUps"}, s => {
+        displayPopUps(s);
+      });
     });
   });
 }

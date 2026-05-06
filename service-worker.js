@@ -39,7 +39,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === "uploadNote") {
     sendResponse(uploadNote(message.note));
   } else if (message.action === "decodeNostrKeys") {
-    sendResponse(self.NostrTools.nip19.decode(message.keys);
+    sendResponse(self.NostrTools.nip19.decode(message.keys));
   }
 });
 
