@@ -234,11 +234,11 @@ initSqlJs(config).then(function(SQL){
         if (tag[1].toLowerCase().startsWith('http')) {
           taggedUrl = tag[1];
         }
-        rValue = tag[1];
       }
     });
 
-    var domain = JSON.parse(value["content"])["name"].toLowerCase();
+    const url = new URL(taggedUrl);
+    var domain = url.hostname.toLowerCase();
 
     console.log('Inserting ' + value['id'] + ' - (' + domain + ') into Toasts DB...');
     self.db.run("INSERT OR IGNORE INTO toasts (id, created_at, domain, url, pubkey, kind, note, favourite, read_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [value['id'], value['created_at'], domain, taggedUrl, value['pubkey'], value['kind'], note, false, 0]);
@@ -432,8 +432,8 @@ initSqlJs(config).then(function(SQL){
 
     var filter;
     var kind;
-    kind = 40;
-    filter = {kinds: [kind], '#t': ["yakclub", "trollbox"], since: 1750046400}
+    kind = 1;
+    filter = {kinds: [kind], '#t': ["popupvideo"], since: 1750046400}
 
     var h = self.pool.subscribeMany(
       self.relays,[
@@ -442,7 +442,7 @@ initSqlJs(config).then(function(SQL){
       {
         onevent(event) {
           toggleConnectionState(true);
-          if (event && event.pubkey && event.content && event.kind == 40 && self.NostrTools.verifyEvent(event, event.pubkey) && event.created_at > 1750046400) {
+          if (event && event.pubkey && event.content && event.kind == 1 && self.NostrTools.verifyEvent(event, event.pubkey) && event.created_at > 1750046400) {
             importToast(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
             dirty = true;
           }
@@ -451,7 +451,8 @@ initSqlJs(config).then(function(SQL){
           if (dirty) {
             syncDatabase();
           }
-          fetchNotes();
+          console.log('EOSE on popups - Calling fetchAuthorInfo...');
+          fetchAuthorInfo();
         },
         onclose() {
           toggleConnectionState(false);
@@ -462,58 +463,6 @@ initSqlJs(config).then(function(SQL){
 
   init();
 
-  function fetchNotes() {
-    var filters = [];
-    var kind;
-
-    var stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 40");
-    kind = 42; // children of channel messages are actually kind 42
-    while(stmt.step()) {
-      const row = stmt.getAsObject();
-      var event = JSON.parse(row.note);
-      filters.push({kinds: [42], '#e': [event.id]});
-    }
-
-    self.filters = filters;
-    console.log('filters: '+ filters.toString());
-
-    var h = self.pool.subscribeMany(
-      self.relays, filters,
-      {
-        onevent(event) {
-          toggleConnectionState(true);
-          if (event && event.pubkey && event.content && event.kind == kind && self.NostrTools.verifyEvent(event, event.pubkey)) {
-            importNote(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
-
-            if (self.hasFinishedLoading) { // Trigger a redraw if this is after the initial load...
-              // Only redraw rooms we're actually in if a new message comes in - otherwise, just ignore it.
-              var weShouldRedraw = false;
-              if (document.getElementById('search-bar').value.startsWith('note')) {
-                var activeRoom = self.NostrTools.nip19.decode(document.getElementById('search-bar').value).data;
-
-               event["tags"].forEach((tag) => {
-                  if (tag[0] == "e" && tag[3] && tag[3] == 'root' && tag[1] == activeRoom) {
-                    weShouldRedraw = true;
-                  }
-                });
-              }
-
-              if (weShouldRedraw) {
-              }
-            }
-          }
-        },
-        oneose() {
-          console.log('EOSE on notes/messages - Calling fetchAuthorInfo...');
-          fetchAuthorInfo();
-        },
-        onclose() {
-          toggleConnectionState(false);
-        }
-      }
-    )
-  }
-
   function onlyUnique(value, index, array) {
     return array.indexOf(value) === index;
   }
@@ -523,20 +472,12 @@ initSqlJs(config).then(function(SQL){
     var dirty = false;
 
     // Get the public keys of everyone who's written a toast
-    var stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 40");
+    var stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 1");
 
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);
       userPubkeys.push(event.pubkey);
-    }
-
-    // Get the public keys of everyone who's written a note
-    var stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 42");
-    while(stmt.step()) {
-      const row = stmt.getAsObject();
-      var event = JSON.parse(row.note);
-      userPubkeys.push(event.pubkey)
     }
 
     // Suppress duplicate authors
@@ -558,7 +499,6 @@ initSqlJs(config).then(function(SQL){
         }
       }
     }
-
 
     var h = self.pool.subscribeMany(
       self.relays,[
@@ -601,7 +541,7 @@ initSqlJs(config).then(function(SQL){
       // We'd also have to update the number of messages, etc. Or, we can cheat and just re-render everything.
 
       var isToast = false;
-      if (note["kind"] == 40) {
+      if (note["kind"] == 1) {
         note["tags"].forEach((tag) => {
           if (tag[0] == "t" && tag[1].toLowerCase().startsWith('popupvideo')) {
             isToast = true;
@@ -636,8 +576,9 @@ initSqlJs(config).then(function(SQL){
       users[event.pubkey] = event;
     }
 
-    //stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 42 AND url = $url ORDER BY created_at DESC");
-    stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 42 ORDER BY created_at DESC");
+    stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 1 ORDER BY created_at DESC"); // Ignore URL or Domain for now
+    //stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 1 AND url = $url ORDER BY created_at DESC");
+    //stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 42 ORDER BY created_at DESC");
     //stmt.bind({$url: mode.substring(4)});
 
     var row;
