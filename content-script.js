@@ -669,8 +669,20 @@ function newNoteSubmit(event) {
   event.preventDefault();
 
   var data = event.target;
-  var url = 'test';
-  var e = {created_at: Math.floor(Date.now() / 1000), kind: 40, tags: [['r', url], ['t', 'popupvideo']], content: JSON.stringify({'name': url})};
+
+  var url = null;
+  if (document.querySelector('#watch7-content meta[itemprop="url"]') !== null) {
+    url = document.querySelector('#watch7-content meta[itemprop="url"]').content;
+  } else {
+    url = window.location.href;
+  }
+
+  var name = null;
+  if (document.querySelector('#watch7-content meta[itemprop="name"]') !== null) {
+    name = document.querySelector('#watch7-content meta[itemprop="name"]').content;
+  }
+
+  var e = {created_at: Math.floor(Date.now() / 1000), kind: 1, tags: [['r', url], ['t', 'popupvideo']], content: JSON.stringify({'name': name, 'url': url})};
 
   console.log('event: ' + e);
   var privkey = document.querySelector('#keys input[name="privkey"]').value;
