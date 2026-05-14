@@ -19,7 +19,7 @@
        "run_at": "document_idle",
        "all_frames": true,
        "css": ["default.css", "micromodal.css"],
-       "js": ["popperjs-core.js", "tippy.js", "micromodal.min.js", "hashicon.umd.js", "linkify.js", "base64.js", "youtube.js", "content-script.js"]
+       "js": ["emoji-mart.js", "popperjs-core.js", "tippy.js", "micromodal.min.js", "hashicon.umd.js", "linkify.js", "base64.js", "youtube.js", "content-script.js"]
     }
   ],
   "permissions": [
