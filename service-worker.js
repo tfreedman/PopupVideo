@@ -67,7 +67,7 @@ function getRelays() {
   var overrideRelays = true;
 
   if (overrideRelays) {
-    var relays = ["wss://toastr.tylerfreedman.com", "wss://purplepag.es"];
+    var relays = ["wss://relay.popup.video"];
   } else {
     relays = relays.concat(default_relays);
   }
