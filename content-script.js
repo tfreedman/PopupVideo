@@ -682,7 +682,8 @@ function newNoteSubmit(event) {
     name = document.querySelector('#watch7-content meta[itemprop="name"]').content;
   }
 
-  var e = {created_at: Math.floor(Date.now() / 1000), kind: 1, tags: [['r', url], ['t', 'popupvideo']], content: JSON.stringify({'name': name, 'url': url})};
+
+  var e = {created_at: Math.floor(Date.now() / 1000), kind: 1, tags: [['r', url], ['t', 'popupvideo'], ['name', name]], content: data.message.value};
 
   console.log('event: ' + e);
   var privkey = document.querySelector('#keys input[name="privkey"]').value;
