@@ -3,24 +3,27 @@ window.privkey = null;
 window.npub = null;
 window.users = {};
 
-var showEmoji = false;
-function toggleEmojiWindow(event) {
-  if (showEmoji) {
-    document.querySelector('#emoji-picker').style.visibility = 'hidden';
-  } else {
-    document.querySelector('#emoji-picker').style.visibility = 'visible';
+var enableEmoji = false;
+if (enableEmoji) {
+  var showEmoji = false;
+  function toggleEmojiWindow(event) {
+    if (showEmoji) {
+      document.querySelector('#emoji-picker').style.visibility = 'hidden';
+    } else {
+      document.querySelector('#emoji-picker').style.visibility = 'visible';
+    }
+
+    showEmoji = !showEmoji;
   }
 
-  showEmoji = !showEmoji;
+  document.querySelector('body').addEventListener("click", event => {
+    // Get parent element and check if click happened outside parent only
+    const parent = document.querySelector("#emoji-picker");
+    if (showEmoji && !parent.contains(event.target)) {
+      toggleEmojiWindow(event);
+    }
+  });
 }
-
-document.querySelector('body').addEventListener("click", event => {
-  // Get parent element and check if click happened outside parent only
-  const parent = document.querySelector("#emoji-picker");
-  if (showEmoji && !parent.contains(event.target)) {
-    toggleEmojiWindow(event);
-  }
-});
 
 async function writeClipboardText(text) {
   if (text === undefined) {
@@ -475,14 +478,16 @@ waitForEl("#movie_player").then(() => {
   popupVideo.id = 'popup-video';
   document.querySelector('#movie_player').appendChild(popupVideo);
 
-  var emojiPicker = document.createElement("div");
-  emojiPicker.id = 'emoji-picker';
-  document.querySelector('body').appendChild(emojiPicker);
+  if (enableEmoji) {
+    var emojiPicker = document.createElement("div");
+    emojiPicker.id = 'emoji-picker';
+    document.querySelector('body').appendChild(emojiPicker);
 
-  const pickerOptions = { onEmojiSelect: function(e){document.querySelector('textarea').value += e.native; console.log(e);}, previewPosition: 'none'}
-  const picker = new EmojiMart.Picker(pickerOptions)
-  if (document.querySelector('#emoji-picker').childNodes.length == 0) {
-    document.querySelector('#emoji-picker').appendChild(picker);
+    const pickerOptions = { onEmojiSelect: function(e){document.querySelector('textarea').value += e.native; console.log(e);}, previewPosition: 'none'}
+    const picker = new EmojiMart.Picker(pickerOptions)
+    if (document.querySelector('#emoji-picker').childNodes.length == 0) {
+      document.querySelector('#emoji-picker').appendChild(picker);
+    }
   }
 
   var updateUIInterval = window.setInterval(function(){updateUI(document.querySelector('#popup-video'))}, 100);
@@ -913,7 +918,9 @@ function newNote(node, params) {
 
   div.innerHTML = innerHTML;
 
-  document.querySelector('#show-emoji-picker-button').addEventListener('click', function(event) {event.stopPropagation(); toggleEmojiWindow(event)});
+  if (enableEmoji) {
+    document.querySelector('#show-emoji-picker-button').addEventListener('click', function(event) {event.stopPropagation(); toggleEmojiWindow(event)});
+  }
 
   var textarea = div.querySelector("textarea");
   textarea.addEventListener('keydown', (e) => validateToast(e, 2));
