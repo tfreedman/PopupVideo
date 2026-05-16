@@ -3,6 +3,9 @@ window.privkey = null;
 window.npub = null;
 window.users = {};
 
+
+
+
 var enableEmoji = false;
 if (enableEmoji) {
   var showEmoji = false;
@@ -130,7 +133,9 @@ function createPopUpPopUp() {
     <div class="modal__overlay" tabindex="-1" data-micromodal-close>
       <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-popup-title">
         <header class="modal__header">
-          <div>PopUps</div>
+          <h1 class="modal__title" id="modal-popup-title">
+            PopUps
+          </h1>
           <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
         </header>
         <main class="modal__content" id="modal-popup-content">
@@ -151,7 +156,9 @@ function createNewPopUpPopUp() {
     <div class="modal__overlay" tabindex="-1" data-micromodal-close>
       <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-new-popup-title">
         <header class="modal__header">
-          <div>PopUps</div>
+          <h1 class="modal__title" id="modal-new-popup-title">
+            New PopUp
+          </h1>
           <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
         </header>
         <main class="modal__content" id="modal-new-popup-content">
@@ -499,7 +506,9 @@ waitForEl("#movie_player").then(() => {
     account.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M463 448.2C440.9 409.8 399.4 384 352 384L288 384C240.6 384 199.1 409.8 177 448.2C212.2 487.4 263.2 512 320 512C376.8 512 427.8 487.3 463 448.2zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM320 336C359.8 336 392 303.8 392 264C392 224.2 359.8 192 320 192C280.2 192 248 224.2 248 264C248 303.8 280.2 336 320 336z"/></svg> Account</span>';
     account.classList.add('modal-account-button');
     account.dataset.micromodalTrigger = "modal-account";
-    document.querySelector('#center').appendChild(account);
+    if (document.querySelector('#center') !== null) {
+      document.querySelector('#center').appendChild(account);
+    }
   }
 
 
@@ -509,7 +518,9 @@ waitForEl("#movie_player").then(() => {
     newPopUp.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M256 512a256 256 0 1 0 0-512 256 256 0 1 0 0 512zM232 344l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z"/></svg> New</span>'
     newPopUp.classList.add('modal-new-popup-button');
     newPopUp.dataset.micromodalTrigger = "modal-new-popup";
-    document.querySelector('#center').appendChild(newPopUp);
+    if (document.querySelector('#center') !== null) {
+      document.querySelector('#center').appendChild(newPopUp);
+    }
   }
 
   if (document.querySelector('#center .modal-profile-button') === null) {
@@ -522,7 +533,15 @@ waitForEl("#movie_player").then(() => {
     popup.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M40 48C26.7 48 16 58.7 16 72l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24L40 48zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L192 64zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zM16 232l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0z"/></svg> PopUps</span>';
     popup.classList.add('modal-popup-button');
     popup.dataset.micromodalTrigger = "modal-popup";
-    document.querySelector('#center').appendChild(popup);
+    if (document.querySelector('#center') !== null) {
+      document.querySelector('#center').appendChild(popup);
+    }
+
+    popup.onclick = function(event) {
+      browser.runtime.sendMessage({ action: "getPopUps" }, response => {
+        displayPopUps(response);
+      });
+    }
   }
 
   modalInitialization();
@@ -534,10 +553,6 @@ waitForEl("#movie_player").then(() => {
     document.querySelector('#keys input[name="privkey"]').value = window.privkey;
     document.querySelector('#keys input[name="privkey"]').disabled = true;
     displayProfile(window.pubkey);
-  });
-
-  browser.runtime.sendMessage({ action: "getPopUps" }, response => {
-    displayPopUps(response);
   });
 
   browser.runtime.sendMessage({ action: "getRelays" }, response => {
@@ -731,9 +746,6 @@ function newNoteSubmit(event) {
       if (data) {
         data.reset();
       }
-      browser.runtime.sendMessage({ action: "getPopUps"}, s => {
-        displayPopUps(s);
-      });
     });
   });
 }
@@ -908,7 +920,7 @@ function newNote(node, params) {
 
          innerHTML += `
             <textarea required minlength="1" name="message" placeholder="Send a message..."></textarea>
-            <a id="show-emoji-picker-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M464 256a208 208 0 1 0 -416 0 208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0zm177.3 63.4C192.3 335 218.4 352 256 352s63.7-17 78.7-32.6c9.2-9.6 24.4-9.9 33.9-.7s9.9 24.4 .7 33.9c-22.1 23-60 47.4-113.3 47.4s-91.2-24.4-113.3-47.4c-9.2-9.6-8.9-24.8 .7-33.9s24.8-8.9 33.9 .7zM144 208a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg></a>
+            <a style="display: none" id="show-emoji-picker-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M464 256a208 208 0 1 0 -416 0 208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0zm177.3 63.4C192.3 335 218.4 352 256 352s63.7-17 78.7-32.6c9.2-9.6 24.4-9.9 33.9-.7s9.9 24.4 .7 33.9c-22.1 23-60 47.4-113.3 47.4s-91.2-24.4-113.3-47.4c-9.2-9.6-8.9-24.8 .7-33.9s24.8-8.9 33.9 .7zM144 208a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg></a>
           </div>
           <button type="submit" class="toast-submit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M536.4-26.3c9.8-3.5 20.6-1 28 6.3s9.8 18.2 6.3 28l-178 496.9c-5 13.9-18.1 23.1-32.8 23.1-14.2 0-27-8.6-32.3-21.7l-64.2-158c-4.5-11-2.5-23.6 5.2-32.6l94.5-112.4c5.1-6.1 4.7-15-.9-20.6s-14.6-6-20.6-.9L229.2 276.1c-9.1 7.6-21.6 9.6-32.6 5.2L38.1 216.8c-13.1-5.3-21.7-18.1-21.7-32.3 0-14.7 9.2-27.8 23.1-32.8l496.9-178z"/></svg> Send</button>
         </form>
