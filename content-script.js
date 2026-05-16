@@ -3,9 +3,6 @@ window.privkey = null;
 window.npub = null;
 window.users = {};
 
-
-
-
 var enableEmoji = false;
 if (enableEmoji) {
   var showEmoji = false;
@@ -347,7 +344,7 @@ function createAccountPopUp() {
             window.npub = response.npub;
             document.querySelector('#keys input[name="privkey"]').value = window.privkey;
             document.querySelector('#keys input[name="privkey"]').disabled = true;
-            displayProfile(window.pubkey);
+            displayProfile(window.pubkey, response.profile);
             window.location.reload();
           });
 
@@ -456,11 +453,10 @@ function updateProfile(event) {
   }
 
   browser.runtime.sendMessage({ action: "signNote", event: e, privkey: document.querySelector('#keys input[name="privkey"]').value }, response => {
-    var note = response.note;
-    console.log('Received signed note back from service worker: ' + JSON.stringify(note));
+    console.log('Received signed note back from service worker: ' + JSON.stringify(response.note));
 
-    browser.runtime.sendMessage({ action: "uploadNote", note: note}, r => {
-      console.log("Sent (kind 0)" + JSON.stringify(note));
+    browser.runtime.sendMessage({ action: "uploadNote", note: response}, r => {
+      console.log("Sent (kind 0)" + JSON.stringify(response.note));
       MicroModal.close('modal-account');
     });
   });
@@ -555,7 +551,11 @@ waitForEl("#movie_player").then(() => {
     window.npub = response.npub;
     document.querySelector('#keys input[name="privkey"]').value = window.privkey;
     document.querySelector('#keys input[name="privkey"]').disabled = true;
-    displayProfile(window.pubkey);
+    displayProfile(window.pubkey, response.profile);
+  });
+
+  browser.runtime.sendMessage({ action: "getProfile" }, response => {
+    displayProfile(window.pubkey, response.profile);
   });
 
   browser.runtime.sendMessage({ action: "getRelays" }, response => {
@@ -568,19 +568,19 @@ waitForEl("#movie_player").then(() => {
   });
 });
 
-function displayProfile(pubKey) {
-  if (pubKey !== undefined) {
-    window.pubKey = pubKey;
-    document.querySelector('#keys input[name="pubkey"]').value = pubKey;
+function displayProfile(pubkey, event) {
+  console.log(event);
+  if (pubkey !== undefined) {
+    document.querySelector('#keys input[name="pubkey"]').value = pubkey;
     document.querySelector('#keys input[name="pubkey"]').disabled = true;
     document.querySelector('#keys input[name="npub"]').value = window.npub;
     document.querySelector('#keys input[name="npub"]').disabled = true;
 
     document.querySelector('#modal-account-content button[type="submit"]').addEventListener('click', updateProfile);
 
-    if (window.users[pubKey] !== undefined) {
+    if (event != undefined) {
       console.log("There's profile data!");
-      var profile = JSON.parse(window.users[pubKey].content);
+      var profile = JSON.parse(event.content);
       if (profile.name !== undefined) {
         document.querySelector('#modal-account-content input[name="name"]').value = profile.name;
       }
@@ -606,7 +606,7 @@ function displayProfile(pubKey) {
           //document.querySelector('#topbar nav .avatar').src = 'circle-user.svg' FIXME
         }
       }
-      console.log(window.users[pubKey]);
+      console.log(event);
     } else {
       console.log("No profile data :(");
     }

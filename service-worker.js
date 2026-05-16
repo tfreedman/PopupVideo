@@ -25,11 +25,13 @@ var getPopUps = null;
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
-    sendResponse({privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey)});
+    sendResponse({privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey), profile: getProfile(self.pubkey)});
   } else if (message.action === "setNostrKeys") {
     sendResponse(setNotrKeys(message.privkey));
   } else if (message.action === "getRelays") {
     sendResponse(getRelays());
+  } else if (message.action === "getProfile") {
+    sendResponse({profile: getProfile(self.pubkey)});
   } else if (message.action === "getUsers") {
     sendResponse(self.users);
   } else if (message.action === "getPopUps") {
@@ -257,7 +259,7 @@ initSqlJs(config).then(function(SQL){
         console.log('Inserting ' + value['id'] + ' into Notes DB...');
         self.users[value['pubkey']] = value;
         if (value['pubkey'] == self.pubkey) {
-          displayProfile(self.pubkey);
+          //displayProfile(self.pubkey); #TODO
         }
         self.db.run("INSERT INTO notes (id, created_at, pubkey, kind, note) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], value['kind'], note]);
         dirty = true;
@@ -267,7 +269,7 @@ initSqlJs(config).then(function(SQL){
           console.log('Updating ' + value['id'] + ' into Notes DB...');
           self.users[value['pubkey']] = value;
           if (value['pubkey'] == self.pubkey) {
-            displayProfile(self.pubkey);
+            //displayProfile(self.pubkey); #TODO
           }
           self.db.exec("UPDATE notes SET id = ?, created_at = ?, kind = ?, note = ? WHERE pubkey = ? AND kind = 0", [value['id'], value['created_at'], value['kind'], note, value['pubkey']]);
           dirty = true;
@@ -427,7 +429,7 @@ initSqlJs(config).then(function(SQL){
     var dirty = false;
 
     if (pk) {
-      //displayProfile(pk); #FIXME
+      //displayProfile(pk); #TODO
     }
 
     var filter;
@@ -495,7 +497,7 @@ initSqlJs(config).then(function(SQL){
       if (self.users[event.pubkey] === undefined) {
         self.users[event.pubkey] = event;
         if (event.pubkey == self.pubkey) {
-          displayProfile(self.pubkey);
+          //displayProfile(self.pubkey); TODO
         }
       }
     }
@@ -530,6 +532,7 @@ initSqlJs(config).then(function(SQL){
 
   self.signNote = function(event, privkey) {
     console.log('Hello from signNote!');
+    console.log(self.NostrTools.finalizeEvent(event, Uint8Array.from(self.NostrTools.nip19.decode(privkey).data)));
     return self.NostrTools.finalizeEvent(event, Uint8Array.from(self.NostrTools.nip19.decode(privkey).data));
   }
 
@@ -564,6 +567,19 @@ initSqlJs(config).then(function(SQL){
     storage.local.set({version: 0}); // This will mismatch with the existing DB version, causing it to be blown away on reload
     init();
     return {privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey)};
+  }
+
+
+  self.getProfile = function() {
+    var stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 0");
+    while(stmt.step()) {
+      const row = stmt.getAsObject();
+      var event = JSON.parse(row.note);
+
+      if (event.pubkey == self.pubkey) {
+        return event;
+      }
+    }
   }
 
   self.getPopUps = function() {
