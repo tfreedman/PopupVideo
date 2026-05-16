@@ -258,9 +258,6 @@ initSqlJs(config).then(function(SQL){
       if (existing_note.length == 0) {
         console.log('Inserting ' + value['id'] + ' into Notes DB...');
         self.users[value['pubkey']] = value;
-        if (value['pubkey'] == self.pubkey) {
-          //displayProfile(self.pubkey); #TODO
-        }
         self.db.run("INSERT INTO notes (id, created_at, pubkey, kind, note) VALUES (?, ?, ?, ?, ?)", [value['id'], value['created_at'], value['pubkey'], value['kind'], note]);
         dirty = true;
         console.log('Adding ' + value['pubkey'] + ' to self.users...');
@@ -268,9 +265,6 @@ initSqlJs(config).then(function(SQL){
         if (existing_note[0].values[0][0] < value['created_at']) {
           console.log('Updating ' + value['id'] + ' into Notes DB...');
           self.users[value['pubkey']] = value;
-          if (value['pubkey'] == self.pubkey) {
-            //displayProfile(self.pubkey); #TODO
-          }
           self.db.exec("UPDATE notes SET id = ?, created_at = ?, kind = ?, note = ? WHERE pubkey = ? AND kind = 0", [value['id'], value['created_at'], value['kind'], note, value['pubkey']]);
           dirty = true;
           console.log('Adding ' + value['pubkey'] + ' to self.users...');
@@ -428,10 +422,6 @@ initSqlJs(config).then(function(SQL){
     self.relays = getRelays().relays;
     var dirty = false;
 
-    if (pk) {
-      //displayProfile(pk); #TODO
-    }
-
     var filter;
     var kind;
     kind = 1;
@@ -496,9 +486,6 @@ initSqlJs(config).then(function(SQL){
       // Load the rows from the DB first before loading from the network
       if (self.users[event.pubkey] === undefined) {
         self.users[event.pubkey] = event;
-        if (event.pubkey == self.pubkey) {
-          //displayProfile(self.pubkey); TODO
-        }
       }
     }
 

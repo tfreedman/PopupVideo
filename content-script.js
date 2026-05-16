@@ -453,10 +453,10 @@ function updateProfile(event) {
   }
 
   browser.runtime.sendMessage({ action: "signNote", event: e, privkey: document.querySelector('#keys input[name="privkey"]').value }, response => {
-    console.log('Received signed note back from service worker: ' + JSON.stringify(response.note));
+    console.log('Received signed note back from service worker: ' + JSON.stringify(response));
 
     browser.runtime.sendMessage({ action: "uploadNote", note: response}, r => {
-      console.log("Sent (kind 0)" + JSON.stringify(response.note));
+      console.log("Sent (kind 0)" + JSON.stringify(r));
       MicroModal.close('modal-account');
     });
   });
@@ -662,10 +662,9 @@ const signNoteForFileUpload = async(files, message, kind, urlBox) => {
     var e = {created_at: Math.floor(Date.now() / 1000), kind: 24242, tags: tags, content: ""};
 
     browser.runtime.sendMessage({ action: "signNote", event: e, privkey: document.querySelector('#keys input[name="privkey"]').value }, response => {
-      var note = response.note;
-      console.log('Received signed note back from service worker: ' + JSON.stringify(note));
+      console.log('Received signed note back from service worker: ' + JSON.stringify(response));
 
-      uploadFile(formData, message, urlBox, JSON.stringify(note));
+      uploadFile(formData, message, urlBox, JSON.stringify(response));
     });
   });
 };
