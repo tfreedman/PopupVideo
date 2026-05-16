@@ -898,27 +898,6 @@ function newNote(node, params) {
       <div class="content">
         <form class="toast-new-form" autocomplete="off" action="">
           <div class="middle">
-            <div class="reply-details hidden">
-              <div class="tags"></div>
-              <button type="button" class="valid reply-cancel">×</button>
-              <p class="heading"></p>
-              <div class="context">
-                <div class="avatar"></div>
-                <span class="username"></span> <span class="pubkey"></span>
-                <br />
-                <div class="content"></div>
-              </div>
-            </div>
-
-            <input type="hidden" name="url" value="${url}" placeholder="URL" />
-          `
-            renderEtags && eTags.forEach(function (tag, index) {
-              innerHTML += `
-            <input type="hidden" name="e" data-event-id="${tag[1]}" data-relay-url="${tag[2]}" data-marker="${tag[3]}" data-pubkey="${tag[4]}" />
-          `
-            })
-
-         innerHTML += `
             <textarea required minlength="1" name="message" placeholder="Send a message..."></textarea>
             <a style="display: none" id="show-emoji-picker-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M464 256a208 208 0 1 0 -416 0 208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0zm177.3 63.4C192.3 335 218.4 352 256 352s63.7-17 78.7-32.6c9.2-9.6 24.4-9.9 33.9-.7s9.9 24.4 .7 33.9c-22.1 23-60 47.4-113.3 47.4s-91.2-24.4-113.3-47.4c-9.2-9.6-8.9-24.8 .7-33.9s24.8-8.9 33.9 .7zM144 208a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg></a>
           </div>
