@@ -65,12 +65,198 @@ body {
   #popup-video {
     position: absolute;
     top: 0;
-    background: rgba(255, 0, 0, 0.1);
+    border-top: 5px solid #F00;
     width: 100%;
     height: 100%;
     z-index: 10000;
     font-size: 16px;
-    pointer-events: none;
+    /* pointer-events: none; */
+
+    .popup {
+      width: 500px;
+
+      * {
+        box-sizing: border-box;
+      }
+
+      .author {
+        margin: 0;
+
+        .avatar {
+          object-fit: cover;
+          border-radius: 74px;
+          overflow: hidden;
+          height: 74px;
+          min-height: 74px;
+          min-width: 74px;
+          width: 74px;
+          border: 5px solid #FFF;
+          margin-right: 10px;
+
+          & > img {
+            &.hashicon {transform: scale(1.25)}
+            width: 64px;
+            height: 64px;
+          }
+        }
+
+        .content {
+          overflow: hidden;
+        }
+
+        .pubkey,
+        .created_at {
+          display: none
+        }
+      }
+
+      &:hover footer a {
+        transition: all 0.5s;
+        opacity: 0.2;
+      }
+
+      button {
+        float: right;
+        margin-left: 10px;
+      }
+
+      &>div {
+        display: flex;
+
+        footer {
+          display: flex;
+          flex-direction: row;
+          margin-left: 5px;
+          justify-content: space-between;
+          min-width: 50px;
+
+          a {
+            flex-basis: 32%;
+            opacity: 0;
+            margin-bottom: 2px;
+
+            &:hover {
+              opacity: 1
+            }
+
+            img {
+              width: 12px;
+              height: 12px
+            }
+          }
+        }
+
+        &>.content {
+          display: flex;
+          flex-direction: row;
+          align-items: start;
+          padding: 2px;
+          width: 400px;
+
+          .caption {
+            flex-grow: 1;
+
+            img,
+            iframe {
+              max-width: min(400px, 100%);
+              max-height: min(400px, 100%);
+            }
+
+            .context {
+              border-left: 2px solid #000;
+              padding-left: 5px;
+
+              .reply-context {
+                cursor: pointer
+              }
+
+              .avatar {
+                min-height: 20px;
+                max-width: 20px;
+                object-fit: cover;
+                border-radius: 20px;
+                overflow: hidden;
+                height: 20px;
+                width: 20px;
+                border: 1px solid #FFF;
+                min-width: 20px;
+                margin-right: 0;
+                display: inline-block;
+                vertical-align: top;
+
+                img {
+                  &.hashicon {
+                    transform: scale(1.25)
+                  }
+
+                  width: 20px;
+                  height: 20px;
+                }
+              }
+
+              .username {
+                font-weight: bold
+              }
+
+              .pubkey {
+                color: #999;
+                font-size: 12px;
+                font-style: italic;
+                font-weight: lighter;
+                display: none
+              }
+            }
+          }
+
+          .created_at {
+            min-width: 80px;
+            color: #FFF;
+            text-align: center;
+            padding-left: 10px;
+          }
+
+          header {
+            color: #2d6084;
+            display: flex;
+            align-content: center;
+            font-size: 18px;
+            margin-left: -7px;
+            max-width: 100%;
+
+            a.modal-profile-button {
+              text-decoration: none;
+              color: #2d6084;
+            }
+
+            .details {
+              display: inline;
+
+              .username {
+                font-weight: bold;
+                margin-right: 10px;
+                white-space: nowrap
+              }
+            }
+
+            .pubkey {
+              display: inline;
+              font-style: italic;
+              font-weight: lighter;
+              font-size: 12px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+
+              &:hover {
+                color: #000;
+                transition: all 0.5s
+              }
+            }
+          }
+        }
+      }
+    }
+
   }
 
   #emoji-picker {

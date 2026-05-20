@@ -552,7 +552,7 @@ waitForEl("#movie_player").then(() => {
     "_npub": "npub1d2nqjhlllsa2zqgq8gcf0ur0gnfxx02q58cwvscj9av6ksnv7vmsnu8ml7"
   }
 
-  document.querySelector('#popup-video').innerHTML = displayTestPopUp(testObject).innerHTML;
+  document.querySelector('#popup-video').appendChild(displayTestPopUp(testObject));
 
   if (document.querySelector('#center .modal-account-button') === null) {
     createAccountPopUp();

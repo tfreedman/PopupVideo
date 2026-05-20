@@ -75,7 +75,7 @@ exportFunction(updateUI, window, {
 function displayTestPopUp(response) {
   const div = document.createElement('div');
 
-  div.classList.add('note');
+  div.classList.add('popup');
 
   div.id = response.id;
 
