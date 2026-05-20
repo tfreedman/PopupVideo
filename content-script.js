@@ -167,6 +167,37 @@ function createNewPopUpPopUp() {
   newNote(document.querySelector('#modal-new-popup-content'), null);
 }
 
+function createInfoPopUp() {
+  var div = document.createElement("div");
+  div.classList.add('modal');
+  div.classList.add('micromodal-slide');
+  div.id = "modal-info";
+  div.ariaHidden = "true";
+  div.innerHTML = `
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-info-title">
+        <header class="modal__header">
+          <h1 class="modal__title" id="modal-info-title">
+            Info
+          </h1>
+          <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
+        </header>
+        <main class="modal__content" id="modal-info-content">
+          <p>PopUp Video is a decentralized Nostr app that lets you comment on top of YouTube videos, using the Nostr protocol. The browser extension draws comments on top of YouTube videos if there are any notes for the video you're watching.</p>
+          <p>For privacy reasons, PopUp Video scrapes all PopUps from the relays you're connected to, stores them in your browser, and then filters based on the exact video ID you're looking at to avoid leaking your browser history.</p>
+
+          <h2>PopUps</h2>
+          <p>A PopUp is defined as a kind 1 event, with tags <em>[['r', "https://www.youtube.com/watch?v=XXXXXXX"], ['t', 'popupvideo'], ['name', 'Video Name']]</em>. </p>
+
+          <p>PopUp Video does not implement NIP-07, and it is unclear if it's possible to ever be compatible with extensions like nos2x.</p>
+        </main>
+      </div>
+    </div>
+  </div>`;
+  document.querySelector('body').appendChild(div);
+}
+
+
 function createAccountPopUp() {
   var div = document.createElement("div");
   div.classList.add('modal');
@@ -507,6 +538,18 @@ waitForEl("#movie_player").then(() => {
     account.dataset.micromodalTrigger = "modal-account";
     if (document.querySelector('#center') !== null) {
       document.querySelector('#center').appendChild(account);
+    }
+  }
+
+
+  if (document.querySelector('#center .modal-info-button') === null) {
+    createInfoPopUp();
+    var info = document.createElement("a");
+    info.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336l24 0 0-64-24 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l48 0c13.3 0 24 10.7 24 24l0 88 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-80 0c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg> Info</span>';
+    info.classList.add('modal-info-button');
+    info.dataset.micromodalTrigger = "modal-info";
+    if (document.querySelector('#center') !== null) {
+      document.querySelector('#center').appendChild(info);
     }
   }
 
