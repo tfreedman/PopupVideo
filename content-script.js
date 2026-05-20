@@ -527,8 +527,32 @@ waitForEl("#movie_player").then(() => {
     }
   }
 
-  var updateUIInterval = window.setInterval(function(){updateUI(document.querySelector('#popup-video'))}, 100);
+  //var updateUIInterval = window.setInterval(function(){updateUI(document.querySelector('#popup-video'))}, 100);
+  //var updateUIInterval = window.setInterval(function(){displayTestPopUp({})}, 100);
 
+  var testObject = {
+    "id": "01b4c3c35cad980fc10b5625fc3cded40d77b51e685027efed3a3a7e443bc563",
+    "created_at": 1778958605,
+    "domain": "www.youtube.com",
+    "url": "https://www.youtube.com/watch?v=V9t7b-fiY1k",
+    "pubkey": "6aa6095ffffc3aa101003a3097f06f44d2633d40a1f0e643122f59ab426cf337",
+    "kind": 1,
+    "note": "{\"content\":\"123456\",\"created_at\":1778958605,\"id\":\"01b4c3c35cad980fc10b5625fc3cded40d77b51e685027efed3a3a7e443bc563\",\"kind\":1,\"pubkey\":\"6aa6095ffffc3aa101003a3097f06f44d2633d40a1f0e643122f59ab426cf337\",\"sig\":\"dee32eaefe93997d369311da54926b17f88b23d7c099d16c9cbbd27b959ef2bdca9513090e69391884a1838424d2d1a8c7b672e733e2a0728d0b07df190d9502\",\"tags\":[[\"r\",\"https://www.youtube.com/watch?v=V9t7b-fiY1k\"],[\"t\",\"popupvideo\"],[\"name\",\"Lonely Rolling Star (Unused Version) - Katamari Damacy\"]]}",
+    "favourite": 0,
+    "read_at": 0,
+    "_author": {
+      "content": "{\"name\":\"Albedo\",\"displayName\":\"Albedo\",\"picture\":\"https://nostr.tylerfreedman.com/uploads/npub1d2nqjhlllsa2zqgq8gcf0ur0gnfxx02q58cwvscj9av6ksnv7vmsnu8ml7/avatar\"}",
+      "created_at": 1778967134,
+      "id": "2b74a22f6b97ed9fc9bc49ee9edbd074d0eee2e0f8d5e3960cd8e2733e69ab66",
+      "kind": 0,
+      "pubkey": "6aa6095ffffc3aa101003a3097f06f44d2633d40a1f0e643122f59ab426cf337",
+      "sig": "506befcc024f2cc56d81c5473d6b844646139552f3d206a4ebefcd9bf05a1e1c1413d2a742954267a7e53b012d25fb541f5d9708dc342a6505045b5687d8b06b",
+      "tags": []
+    },
+    "_npub": "npub1d2nqjhlllsa2zqgq8gcf0ur0gnfxx02q58cwvscj9av6ksnv7vmsnu8ml7"
+  }
+
+  document.querySelector('#popup-video').innerHTML = displayTestPopUp(testObject).innerHTML;
 
   if (document.querySelector('#center .modal-account-button') === null) {
     createAccountPopUp();
