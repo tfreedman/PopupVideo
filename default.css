@@ -538,6 +538,13 @@ body {
   }
 
   .modal__overlay {
+    font-size: 14px;
+
+    label {font-weight: bold; font-size: 14px}
+
+    h2 {margin: 0.8em 0}
+
+
     * {
       box-sizing: border-box;
       -webkit-font-smoothing: antialiased;
@@ -580,7 +587,7 @@ body {
       &:active {background: #cc5295}
     }
 
-    #modal-info {
+    #modal-info-content {
       p {max-width: 400px}
     }
 
@@ -589,6 +596,42 @@ body {
 
       .note:nth-child(even) {background: #FFF}
       .note:nth-child(odd) {background: #DDD}
+    }
+
+    #modal-new-popup-content {
+      min-width: 500px;
+
+      form {
+        width: 100%;
+        clear: both;
+        display: flex;
+        align-items: center;
+
+        .middle {
+          flex: 1;
+          padding: 10px;
+
+          input, textarea {
+            outline: none;
+            padding: 14px;
+            background: #fff;
+            border-radius: 20px;
+            vertical-align: middle;
+            font-size: 12px;
+            width: calc(100%);
+            overflow-x: hidden;
+            max-width: calc(100%);
+            border: none;
+            color: #282a51;
+            display: inline-block;
+            resize: none;
+          }
+        }
+
+        button {
+          margin-left: 10px;
+        }
+      }
     }
 
     #modal-profile-content {
@@ -684,7 +727,7 @@ body {
             &.hidden {display: none}
 
             label {
-              font-size: 0.75rem;
+              font-size: 1.4rem;
               font-weight: 700;
               margin: 10px 0 0 0;
               padding: 0 3px;
@@ -697,7 +740,7 @@ body {
 
             input[type=text].input, input[type=url].input, textarea {
               padding: 11px 10px;
-              font-size: 0.75rem;
+              font-size: 1rem;
               background-color: rgba(255, 255, 255, 0.8);
               border: 1px solid #eaeaea;
               border-radius: .375rem;

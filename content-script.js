@@ -183,6 +183,7 @@ function createInfoPopUp() {
           <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
         </header>
         <main class="modal__content" id="modal-info-content">
+          <h2></h2>
           <p>PopUp Video is a decentralized Nostr app that lets you comment on top of YouTube videos, using the Nostr protocol. The browser extension draws comments on top of YouTube videos if there are any notes for the video you're watching.</p>
           <p>For privacy reasons, PopUp Video scrapes all PopUps from the relays you're connected to, stores them in your browser, and then filters based on the exact video ID you're looking at to avoid leaking your browser history.</p>
 
