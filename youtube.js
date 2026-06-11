@@ -133,42 +133,42 @@ function displayTestPopUp(response) {
             <img src="${avatarURL}" class="${imageClass}"/>
           </div>
         </a>
-        <div class="content">
-          <header>
-            <div class="details">
-              <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><span class="username">${username}</span></a>
-            </div>
-            <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><div class="pubkey">${response._npub}</div></a>
-          </header>
-        </div>
       </div>
 
-            <div class="content">
-        <div class="created_at"><time data-tippy="${epochTimestamp.toUTCString()}" datetime="${epochTimestamp}">${(epochTimestamp.getHours() < 10 ? '0' : '') + epochTimestamp.getHours()}:${(epochTimestamp.getMinutes() < 10 ? '0' : '') + epochTimestamp.getMinutes()}</time></div>
-        <div class="caption">`
+      <div class="content">
+        <header>
+          <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><span class="username">${username}</span> <span class="pubkey">${response._npub}</span></a>
+        </header>
+        <section>
+          <div class="caption">`
 
-      innerHTML += `
-      ${linkifyAndEmbed(message.replace(/\n/g, '<br />'))}
-        </div>
-        <footer></footer>
+        innerHTML += `
+        ${linkifyAndEmbed(message.replace(/\n/g, '<br />'))}
+          </div>
+        </section>
+        <footer>
+          <time class="created_at" data-tippy="${epochTimestamp.toUTCString()}" datetime="${epochTimestamp}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M464 256a208 208 0 1 1 -416 0 208 208 0 1 1 416 0zM0 256a256 256 0 1 0 512 0 256 256 0 1 0 -512 0zM232 120l0 136c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2 280 120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"/></svg></time>
+        </footer>
       </div>
     </div>
   `
 
   div.innerHTML = innerHTML;
 
-  var author = div.querySelector('.author');
-  author.dataset.npub = response._npub;
-  author.dataset.username = username;
-  author.dataset.avatar = avatarURL;
-  author.dataset.banner = bannerURL;
-  author.dataset.pubkey = response.pubkey;
-  if (response._author !== undefined) {
-    author.dataset.content = JSON.stringify(authorContent);
-    author.dataset.raw = JSON.stringify(response._author);
-  }
+  var author = div.querySelectorAll('.modal-profile-button');
+  author.forEach(i => {
+    i.dataset.npub = response._npub;
+    i.dataset.username = username;
+    i.dataset.avatar = avatarURL;
+    i.dataset.banner = bannerURL;
+    i.dataset.pubkey = response.pubkey;
+    if (response._author !== undefined) {
+      i.dataset.content = JSON.stringify(authorContent);
+      i.dataset.raw = JSON.stringify(response._author);
+    }
+  });
 
-  var links = div.querySelectorAll(".author a");
+  var links = div.querySelectorAll(".modal-profile-button");
   links.forEach(i => {
     i.addEventListener('click', (e) => updateProfileModal(e));
   });

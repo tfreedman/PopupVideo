@@ -38,7 +38,7 @@ async function writeClipboardText(text) {
 }
 
 function updateProfileModal(event) {
-  var p = event.target.closest(".author");
+  var p = event.target.closest(".modal-profile-button");
 
   parent = document.querySelector('#modal-profile .profile');
   parent.innerHTML = '';
