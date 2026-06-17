@@ -140,7 +140,6 @@ body {
           margin-left: -50px;
 
           header {
-            & > a {display: flex}
             color: #2d6084;
             align-content: center;
             pointer-events: auto;
@@ -156,6 +155,8 @@ body {
               text-decoration: none;
               color: #2d6084;
             }
+
+            .hicon {width: 16px; height: 16px}
 
             .pubkey {
               display: inline;

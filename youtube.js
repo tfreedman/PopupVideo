@@ -1,3 +1,19 @@
+async function writeClipboardText(text) {
+  if (text === undefined) {
+    text = "<blank>";
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+exportFunction(writeClipboardText, window, {
+  defineAs: "writeClipboardText",
+});
+
 function getPlayerState() {
   if (document.querySelector('#movie_player').classList.contains('paused-mode')) {
     return 'paused';
@@ -127,7 +143,8 @@ function displayTestPopUp(response) {
 
       <div class="content">
         <header>
-          <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><span class="username">${username}</span> <span class="pubkey">${response._npub}</span></a>
+          <img src="${hashicon(response.pubkey).toDataURL()}" class="hicon" />
+          <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><span class="username">${username}</span></a>
         </header>
         <section>
           <div class="caption">`
@@ -156,6 +173,19 @@ function displayTestPopUp(response) {
       i.dataset.raw = JSON.stringify(response._author);
     }
   });
+
+  var hicon = div.querySelector('.hicon');
+
+  tippy(hicon, {
+    content: "<span style='font-size: 10px'>" + response._npub + "</span>",
+    allowHTML: true
+  });
+
+  hicon.onclick = function(event) {
+    event.preventDefault();
+    console.log(response._npub);
+    writeClipboardText(response._npub);
+  }
 
   var links = div.querySelectorAll(".modal-profile-button");
   links.forEach(i => {
