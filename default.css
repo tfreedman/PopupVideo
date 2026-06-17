@@ -174,26 +174,22 @@ body {
             margin-left: 5px;
             justify-content: space-between;
             min-width: 50px;
+            pointer-events: auto;
 
-            a {
+            a, .created_at {
               flex-basis: 32%;
-              opacity: 0;
+              opacity: 0.75;
               margin-bottom: 2px;
 
               &:hover {
                 opacity: 1
               }
 
-              img {
+              img, svg {
                 width: 12px;
                 height: 12px
               }
             }
-          }
-
-          .created_at svg {
-            width: 16px;
-            pointer-events: auto;
           }
         }
       }
