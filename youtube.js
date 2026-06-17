@@ -143,8 +143,9 @@ function displayTestPopUp(response) {
 
       <div class="content">
         <header>
-          <img src="${hashicon(response.pubkey).toDataURL()}" class="hicon" />
+          <img src="${hashicon(response.pubkey).toDataURL()}" class="hicon" /> 
           <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><span class="username">${username}</span></a>
+          <span class="empty"></span>
         </header>
         <section>
           <div class="caption">`
@@ -198,7 +199,7 @@ function displayTestPopUp(response) {
   time.dataset.tippy = epochTimestamp.toUTCString();
   time.datetime = epochTimestamp;
   time.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M464 256a208 208 0 1 1 -416 0 208 208 0 1 1 416 0zM0 256a256 256 0 1 0 512 0 256 256 0 1 0 -512 0zM232 120l0 136c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2 280 120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"/></svg>';
-  div.querySelector('footer').prepend(time)
+  div.querySelector('header').append(time)
 
   tippy(time, {
     content: (reference) => reference.dataset.tippy
@@ -219,7 +220,7 @@ function displayTestPopUp(response) {
   }
 
   link.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z"/></svg>';
-  div.querySelector('footer').prepend(link)
+  div.querySelector('header').append(link)
   return div
 }
 

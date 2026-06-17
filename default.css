@@ -135,14 +135,33 @@ body {
           border-radius: 74px 74px 74px 74px;
           background: #FFF;
           align-items: start;
-          padding: 0 20px 0 50px;
-          width: 400px;
+          padding: 5px 20px 5px 40px;
+          width: 300px;
           margin-left: -50px;
+
+          section {color: #0f0f0f}
 
           header {
             color: #2d6084;
             align-content: center;
             pointer-events: auto;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            min-width: 50px;
+            pointer-events: auto;
+            width: 100%;
+
+            .raw, .created_at {
+              opacity: 0.25;
+              width: 14px;
+              height: 14px;
+              margin: 0 2px;
+
+              &:hover {
+                opacity: 1
+              }
+            }
 
             .username {
               font-weight: bold;
@@ -156,7 +175,9 @@ body {
               color: #2d6084;
             }
 
-            .hicon {width: 16px; height: 16px}
+            .hicon {width: 16px; height: 16px; margin: 3px 3px 0 0}
+
+            .empty {flex: 2}
 
             .pubkey {
               display: inline;
@@ -166,30 +187,6 @@ body {
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
-            }
-          }
-
-          footer {
-            display: flex;
-            flex-direction: row;
-            margin-left: 5px;
-            justify-content: space-between;
-            min-width: 50px;
-            pointer-events: auto;
-
-            a, .created_at {
-              flex-basis: 32%;
-              opacity: 0.75;
-              margin-bottom: 2px;
-
-              &:hover {
-                opacity: 1
-              }
-
-              img, svg {
-                width: 12px;
-                height: 12px
-              }
             }
           }
         }
@@ -268,11 +265,6 @@ body {
       .pubkey, .created_at {
         display: none
       }
-    }
-
-    &:hover footer a {
-      transition: all 0.5s;
-      opacity: 0.2;
     }
 
     button {
