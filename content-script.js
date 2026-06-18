@@ -3,7 +3,7 @@ window.privkey = null;
 window.npub = null;
 window.users = {};
 
-var currentPopUp = null;
+var currentPopUps = [];
 var testObject = null;
 
 
@@ -999,28 +999,32 @@ function newNote(node, params) {
   node.append(div);
 }
 
-// Hack - just keep drawing the same popup for the time being
-
 function updateOverlay() {
   setInterval(function() {
     var playerState = getPlayerState();
 
-    if (!currentPopUp) {
-      currentPopUp = {div: renderPopUp(testObject), startTime: performance.now(), startTimestamp: getCurrentTime(), expiryTime: performance.now() + (10 * 1000)}
-      currentPopUp.element = document.querySelector('#popup-video').appendChild(currentPopUp.div);
-      console.log('Adding PopUp - Expiring at ' + currentPopUp.expiryTime);
-    } else if (currentPopUp && (currentPopUp.expiryTime < performance.now()) && currentPopUp.startTimestamp + 10 < getCurrentTime() && playerState == 'playing') {
-      currentPopUp.element.remove();
-      console.log("Removing PopUp...");
-      currentPopUp = null;
-    } else if (playerState != 'playing') {
-      console.log("Player isn't playing...")
-    } else if (currentPopUp && currentPopUp.startTimestamp + 10 > getCurrentTime()) {
-      console.log("Not enough of the video has been watched / scrolled past...")
-    } else if (currentPopUp && currentPopUp.expiryTime > performance.now()) {
-      console.log("PopUp hasn't expired...")
-    } else {
-      console.log("Waiting...");
+    if (currentPopUps.length == 0) {
+      // Hack - just keep drawing the same popup for the time being
+      popup = {div: renderPopUp(testObject), startTime: performance.now(), startTimestamp: getCurrentTime(), expiryTime: performance.now() + (10 * 1000)}
+      popup.element = document.querySelector('#popup-video').appendChild(popup.div);
+      console.log('Adding PopUp - Expiring at ' + popup.expiryTime);
+      currentPopUps.push(popup);
+    }
+
+    for (let i = currentPopUps.length - 1; i >= 0; i--) {
+      if (currentPopUps[i].expiryTime < performance.now() && currentPopUps[i].startTimestamp + 10 < getCurrentTime() && playerState == 'playing') {
+        currentPopUps[i].element.remove();
+        console.log("Removing PopUp...");
+        currentPopUps.splice(i, 1);
+      } else if (playerState != 'playing') {
+        console.log("Player isn't playing...")
+      } else if (currentPopUps[i] && currentPopUps[i].startTimestamp + 10 > getCurrentTime()) {
+        console.log("Not enough of the video has been watched / scrolled past...")
+      } else if (currentPopUps[i] && currentPopUps[i].expiryTime > performance.now()) {
+        console.log("PopUp hasn't expired...")
+      } else {
+        console.log("Waiting...");
+      }
     }
   }, 500);
 };
