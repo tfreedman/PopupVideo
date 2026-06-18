@@ -88,7 +88,7 @@ exportFunction(updateUI, window, {
   defineAs: "updateUI",
 });
 
-function displayTestPopUp(response) {
+function renderPopUp(response) {
   const div = document.createElement('div');
 
   div.classList.add('popup');
@@ -224,6 +224,6 @@ function displayTestPopUp(response) {
   return div
 }
 
-exportFunction(displayTestPopUp, window, {
-  defineAs: "displayTestPopUp",
+exportFunction(renderPopUp, window, {
+  defineAs: "renderPopUp",
 });

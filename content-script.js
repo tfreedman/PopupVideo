@@ -3,6 +3,10 @@ window.privkey = null;
 window.npub = null;
 window.users = {};
 
+var currentPopUp = null;
+var testObject = null;
+
+
 var enableEmoji = false;
 if (enableEmoji) {
   var showEmoji = false;
@@ -531,7 +535,7 @@ waitForEl("#movie_player").then(() => {
   //var updateUIInterval = window.setInterval(function(){updateUI(document.querySelector('#popup-video'))}, 100);
   //var updateUIInterval = window.setInterval(function(){displayTestPopUp({})}, 100);
 
-  var testObject = {
+  testObject = {
     "id": "01b4c3c35cad980fc10b5625fc3cded40d77b51e685027efed3a3a7e443bc563",
     "created_at": 1778958605,
     "domain": "www.youtube.com",
@@ -553,7 +557,9 @@ waitForEl("#movie_player").then(() => {
     "_npub": "npub1d2nqjhlllsa2zqgq8gcf0ur0gnfxx02q58cwvscj9av6ksnv7vmsnu8ml7"
   }
 
-  document.querySelector('#popup-video').appendChild(displayTestPopUp(testObject));
+  updateOverlay();
+
+  //document.querySelector('#popup-video').appendChild(renderPopUp(testObject));
 
   if (document.querySelector('#center .modal-account-button') === null) {
     createAccountPopUp();
@@ -617,7 +623,7 @@ waitForEl("#movie_player").then(() => {
 
     popup.onclick = function(event) {
       browser.runtime.sendMessage({ action: "getPopUps" }, response => {
-        displayPopUps(response);
+        displayAllPopUps(response);
       });
     }
   }
@@ -943,7 +949,7 @@ function displayPopUp(response) {
   return div
 }
 
-function displayPopUps(response) {
+function displayAllPopUps(response) {
   document.querySelector('#modal-popup-content').innerHTML = '';
   for (const element of response) {
     document.querySelector('#modal-popup-content').appendChild(displayPopUp(element));
@@ -992,3 +998,29 @@ function newNote(node, params) {
 
   node.append(div);
 }
+
+// Hack - just keep drawing the same popup for the time being
+
+function updateOverlay() {
+  setInterval(function() {
+    var playerState = getPlayerState();
+
+    if (!currentPopUp) {
+      currentPopUp = {div: renderPopUp(testObject), startTime: performance.now(), startTimestamp: getCurrentTime(), expiryTime: performance.now() + (10 * 1000)}
+      currentPopUp.element = document.querySelector('#popup-video').appendChild(currentPopUp.div);
+      console.log('Adding PopUp - Expiring at ' + currentPopUp.expiryTime);
+    } else if (currentPopUp && (currentPopUp.expiryTime < performance.now()) && currentPopUp.startTimestamp + 10 < getCurrentTime() && playerState == 'playing') {
+      currentPopUp.element.remove();
+      console.log("Removing PopUp...");
+      currentPopUp = null;
+    } else if (playerState != 'playing') {
+      console.log("Player isn't playing...")
+    } else if (currentPopUp && currentPopUp.startTimestamp + 10 > getCurrentTime()) {
+      console.log("Not enough of the video has been watched / scrolled past...")
+    } else if (currentPopUp && currentPopUp.expiryTime > performance.now()) {
+      console.log("PopUp hasn't expired...")
+    } else {
+      console.log("Waiting...");
+    }
+  }, 500);
+};
