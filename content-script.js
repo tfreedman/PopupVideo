@@ -906,24 +906,26 @@ function displayPopUp(response) {
     allowHTML: true
   });
 
-    hicon.onclick = function(event) {
+  hicon.onclick = function(event) {
     event.preventDefault();
     console.log(response._npub);
     writeClipboardText(response._npub);
   }
 
-  var author = div.querySelector('.author');
-  author.dataset.npub = response._npub;
-  author.dataset.username = username;
-  author.dataset.avatar = avatarURL;
-  author.dataset.banner = bannerURL;
-  author.dataset.pubkey = response.pubkey;
-  if (response._author !== undefined) {
-    author.dataset.content = JSON.stringify(authorContent);
-    author.dataset.raw = JSON.stringify(response._author);
-  }
+  var author = div.querySelectorAll('.modal-profile-button');
+  author.forEach(i => {
+    i.dataset.npub = response._npub;
+    i.dataset.username = username;
+    i.dataset.avatar = avatarURL;
+    i.dataset.banner = bannerURL;
+    i.dataset.pubkey = response.pubkey;
+    if (response._author !== undefined) {
+      i.dataset.content = JSON.stringify(authorContent);
+      i.dataset.raw = JSON.stringify(response._author);
+    }
+  });
 
-  var links = div.querySelectorAll(".author a");
+  var links = div.querySelectorAll(".modal-profile-button");
   links.forEach(i => {
     i.addEventListener('click', (e) => updateProfileModal(e));
   });
