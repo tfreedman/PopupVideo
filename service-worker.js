@@ -3,7 +3,7 @@ self.mode = "PopUpVideo";
 var storage = browser.storage; // Add chrome support later
 var version = 0; // The version of this script
 
-var _privkey;
+var _privkey = null;
 var _settings = 0;
 var _version;
 var _database;
@@ -20,24 +20,22 @@ const readLocalStorage = async (key) => {
   });
 };
 
-var pubKey;
+var pubkey = null;
 var getPopUps = null;
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
-    sendResponse({privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey), profile: getProfile(self.pubkey)});
+    sendResponse({privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey), profile: getProfile(self.pubkey)}); // sw ok
   } else if (message.action === "setNostrKeys") {
     sendResponse(setNostrKeys(message.privkey));
   } else if (message.action === "getRelays") {
-    sendResponse(getRelays());
+    sendResponse(getRelays()); // sw ok
   } else if (message.action === "getProfile") {
     sendResponse({profile: getProfile(self.pubkey)});
-  } else if (message.action === "getUsers") {
-    sendResponse(self.users);
   } else if (message.action === "getPopUps") {
     sendResponse(getPopUps());
   } else if (message.action === "signNote") {
-    sendResponse(signNote(message.event, message.privkey));
+    sendResponse(signNote(message.event, message.privkey)); // sw ok
   } else if (message.action === "uploadNote") {
     sendResponse(uploadNote(message.note));
   } else if (message.action === "decodeNostrKeys") {
@@ -102,8 +100,6 @@ async function readDBToVariables() {
   }
 }
 readDBToVariables();
-
-var pubkey;
 
 config = {
   locateFile: filename => `${filename}`
@@ -559,14 +555,16 @@ initSqlJs(config).then(function(SQL){
 
   self.getProfile = function() {
     var stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 0");
+    var dbok = (self.db == null);
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);
 
       if (event.pubkey == self.pubkey) {
-        return event;
+        return {event: event, dbok: dbok}
       }
     }
+    return {event: null, dbok: dbok}
   }
 
   self.getPopUps = function() {
