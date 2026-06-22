@@ -39,7 +39,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === "uploadNote") {
     sendResponse(uploadNote(message.note));
   } else if (message.action === "decodeNostrKeys") {
-    sendResponse(self.NostrTools.nip19.decode(message.keys));
+    sendResponse(self.NostrTools.nip19.decode(message.keys)); // sw ok
   }
 });
 
@@ -521,6 +521,9 @@ initSqlJs(config).then(function(SQL){
 
   self.uploadNote = function(note) {
     console.log("Sending " + JSON.stringify(note));
+    if (self.pool == null) {
+      init();
+    }
     Promise.any(self.pool.publish(relays, note)).then(relay => {
       // When we upload a note, normally we'd have to keep track of state.
       // If there are no messages, we'd have to remove the message asking you to be the first.
