@@ -623,9 +623,7 @@ waitForEl("#movie_player").then(() => {
     }
 
     popup.onclick = function(event) {
-      browser.runtime.sendMessage({ action: "getPopUps" }, response => {
-        displayAllPopUps(response);
-      });
+      getPopUps();
     }
   }
 
@@ -1031,3 +1029,15 @@ function updateOverlay() {
     }
   }, 500);
 };
+
+function getPopUps() {
+  // The Service Worker might be asleep when this is called, and it takes a bit to wake up the DB.
+  // Disregard any responses that return null, because they're from when the DB is offline.
+  browser.runtime.sendMessage({ action: "getPopUps" }, response => {
+    if (response != null) {
+      displayAllPopUps(response);
+    } else {
+      setTimeout(getPopUps(), 250);
+    }
+  });
+}
