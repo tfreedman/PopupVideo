@@ -27,7 +27,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
     sendResponse({privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey), profile: getProfile(self.pubkey)});
   } else if (message.action === "setNostrKeys") {
-    sendResponse(setNotrKeys(message.privkey));
+    sendResponse(setNostrKeys(message.privkey));
   } else if (message.action === "getRelays") {
     sendResponse(getRelays());
   } else if (message.action === "getProfile") {
