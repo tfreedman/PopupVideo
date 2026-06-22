@@ -1,7 +1,6 @@
 window.pubkey = null;
 window.privkey = null;
 window.npub = null;
-window.users = {};
 
 var currentPopUps = [];
 var testObject = null;
@@ -633,26 +632,14 @@ waitForEl("#movie_player").then(() => {
     content: (reference) => reference.dataset.tippy
   });
 
-  browser.runtime.sendMessage({ action: "getNostrKeys" }, response => {
-    window.privkey = response.privkey;
-    window.pubkey = response.pubkey;
-    window.npub = response.npub;
-    document.querySelector('#keys input[name="privkey"]').value = window.privkey;
-    document.querySelector('#keys input[name="privkey"]').disabled = true;
-    displayProfile(window.pubkey, response.profile);
-  });
 
-  browser.runtime.sendMessage({ action: "getProfile" }, response => {
-    displayProfile(window.pubkey, response.profile);
-  });
+  getNostrKeys();
+
+  getProfile();
 
   browser.runtime.sendMessage({ action: "getRelays" }, response => {
     window.relays = response.relays;
     displayRelays(response.relays, response.debugging);
-  });
-
-  browser.runtime.sendMessage({ action: "getUsers" }, response => {
-    window.users = response.users;
   });
 });
 
@@ -1041,3 +1028,34 @@ function getPopUps() {
     }
   });
 }
+
+
+function getProfile() {
+  // The Service Worker might be asleep when this is called, and it takes a bit to wake up the DB.
+  // Disregard any responses that return null, because they're from when the DB is offline.
+  browser.runtime.sendMessage({ action: "getProfile" }, response => {
+    if (response.profile.dbok != null) {
+      displayProfile(window.pubkey, response.profile.event);
+    } else {
+      setTimeout(getProfile(), 250);
+    }
+  });
+}
+
+function getNostrKeys() {
+  // The Service Worker might be asleep when this is called, and it takes a bit to wake up the DB.
+  // Disregard any responses that return null, because they're from when the DB is offline.
+  browser.runtime.sendMessage({ action: "getNostrKeys" }, response => {
+    if (response.privkey != null) {
+      window.privkey = response.privkey;
+      window.pubkey = response.pubkey;
+      window.npub = response.npub;
+      document.querySelector('#keys input[name="privkey"]').value = window.privkey;
+      document.querySelector('#keys input[name="privkey"]').disabled = true;
+      displayProfile(window.pubkey, response.profile);
+    } else {
+      setTimeout(getNostrKeys(), 250);
+    }
+  });
+}
+
