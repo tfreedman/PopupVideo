@@ -27,17 +27,17 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
     sendResponse({privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey), profile: getProfile(self.pubkey)}); // sw ok
   } else if (message.action === "setNostrKeys") {
-    sendResponse(setNostrKeys(message.privkey));
+    sendResponse(setNostrKeys(message.privkey)); // sw ok
   } else if (message.action === "getRelays") {
     sendResponse(getRelays()); // sw ok
   } else if (message.action === "getProfile") {
-    sendResponse({profile: getProfile(self.pubkey)});
+    sendResponse({profile: getProfile(self.pubkey)}); // sw ok
   } else if (message.action === "getPopUps") {
-    sendResponse(getPopUps());
+    sendResponse(getPopUps()); // sw ok
   } else if (message.action === "signNote") {
     sendResponse(signNote(message.event, message.privkey)); // sw ok
   } else if (message.action === "uploadNote") {
-    sendResponse(uploadNote(message.note));
+    sendResponse(uploadNote(message.note)); // sw ok
   } else if (message.action === "decodeNostrKeys") {
     sendResponse(self.NostrTools.nip19.decode(message.keys)); // sw ok
   }
@@ -571,6 +571,10 @@ initSqlJs(config).then(function(SQL){
   }
 
   self.getPopUps = function() {
+    if (self.db == null) {
+      init();
+    }
+
     var popups = [];
     var users = {}
     var stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 0");
