@@ -89,7 +89,7 @@ function updateProfileModal(event) {
   }
 
   document.querySelector('#modal-profile .pubkey').innerHTML = p.dataset.npub;
-  MicroModal.close('modal-popup');
+  MicroModal.close('modal-all-popups');
   MicroModal.show('modal-profile');
 }
 
@@ -123,23 +123,23 @@ function createProfilePopUp() {
   document.querySelector('body').appendChild(div);
 }
 
-function createPopUpPopUp() {
+function createAllPopUpsPopUp() {
   var div = document.createElement("div");
   div.classList.add('modal');
   div.classList.add('micromodal-slide');
-  div.id = "modal-popup";
+  div.id = "modal-all-popups";
   div.ariaHidden = "true";
   div.innerHTML = `
     <div class="modal__overlay" tabindex="-1" data-micromodal-close>
-      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-popup-title">
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-all-popups-title">
         <header class="modal__header">
-          <h1 class="modal__title" id="modal-popup-title">
+          <h1 class="modal__title" id="modal-all-popups-title">
             PopUps
           </h1>
           <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
         </header>
         <br />
-        <main class="modal__content" id="modal-popup-content">
+        <main class="modal__content" id="modal-all-popups-content">
         </main>
       </div>
     </div>
@@ -607,21 +607,19 @@ waitForEl("#movie_player").then(() => {
     createProfilePopUp();
   }
 
-  if (document.querySelector('#center .modal-popup-button') === null) {
-    createPopUpPopUp();
-    var popup = document.createElement("a");
-    popup.dataset.tippy = "PopUps";
-    popup.classList.add('modal-popup-button');
-    popup.classList.add("pvbutton");
-
-//    popup.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M40 48C26.7 48 16 58.7 16 72l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24L40 48zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L192 64zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32l288 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-288 0zM16 232l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24l0 48c0 13.3 10.7 24 24 24l48 0c13.3 0 24-10.7 24-24l0-48c0-13.3-10.7-24-24-24l-48 0z"/></svg>';
-    popup.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM16 9V7H8V9H16ZM8 17V15H16V17H8ZM16 11H8V13H16V11Z" /></svg>';
-    popup.dataset.micromodalTrigger = "modal-popup";
+  if (document.querySelector('#center .modal-all-popups-button') === null) {
+    createAllPopUpsPopUp();
+    var popups = document.createElement("a");
+    popups.dataset.tippy = "PopUps";
+    popups.classList.add("pvbutton");
+    popups.classList.add('modal-all-popups-button');
+    popups.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM16 9V7H8V9H16ZM8 17V15H16V17H8ZM16 11H8V13H16V11Z" /></svg>';
+    popups.dataset.micromodalTrigger = "modal-all-popups";
     if (document.querySelector('#center') !== null) {
-      document.querySelector('#center').appendChild(popup);
+      document.querySelector('#center').appendChild(popups);
     }
 
-    popup.onclick = function(event) {
+    popups.onclick = function(event) {
       getPopUps();
     }
   }
@@ -813,6 +811,7 @@ function newNoteSubmit(event) {
       if (data) {
         data.reset();
       }
+      //MicroModal.close('modal-new-popup');
     });
   });
 }
@@ -942,9 +941,9 @@ function displayPopUp(response) {
 }
 
 function displayAllPopUps(response) {
-  document.querySelector('#modal-popup-content').innerHTML = '';
+  document.querySelector('#modal-all-popups-content').innerHTML = '';
   for (const element of response) {
-    document.querySelector('#modal-popup-content').appendChild(displayPopUp(element));
+    document.querySelector('#modal-all-popups-content').appendChild(displayPopUp(element));
   }
 }
 
@@ -986,7 +985,9 @@ function newNote(node, params) {
   textarea.addEventListener('keydown', (e) => validateToast(e, 2));
 
   var form = div.querySelector("form");
-  form.addEventListener('submit', (e) => newNoteSubmit(e));
+  form.addEventListener('submit', (e) => {
+    newNoteSubmit(e);
+  });
 
   node.append(div);
 }
