@@ -7,6 +7,7 @@ var _privkey = null;
 var _settings = 0;
 var _version;
 var _database;
+// _variables come from the database
 
 const readLocalStorage = async (key) => {
   return new Promise((resolve, reject) => {
@@ -22,6 +23,7 @@ const readLocalStorage = async (key) => {
 
 var pubkey = null;
 var getPopUps = null;
+var relays = null;
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
@@ -523,8 +525,15 @@ initSqlJs(config).then(function(SQL){
     console.log("Sending " + JSON.stringify(note));
     if (self.pool == null) {
       init();
+      console.log('self.relays:');
+      console.log(self.relays);
+    } else {
+      console.log('self.pool:')
+      console.log(self.pool);
+      console.log('self.relays:');
+      console.log(self.relays);
     }
-    Promise.any(self.pool.publish(relays, note)).then(relay => {
+    Promise.any(self.pool.publish(self.relays, note)).then(relay => {
       // When we upload a note, normally we'd have to keep track of state.
       // If there are no messages, we'd have to remove the message asking you to be the first.
       // We'd also have to update the number of messages, etc. Or, we can cheat and just re-render everything.
@@ -557,8 +566,11 @@ initSqlJs(config).then(function(SQL){
 
 
   self.getProfile = function() {
+    if (self.db == null) {
+      init();
+    }
     var stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 0");
-    var dbok = (self.db == null);
+    var dbok = (self.db != null);
     while(stmt.step()) {
       const row = stmt.getAsObject();
       var event = JSON.parse(row.note);

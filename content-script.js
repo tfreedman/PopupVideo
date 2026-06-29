@@ -380,7 +380,7 @@ function createAccountPopUp() {
             window.npub = response.npub;
             document.querySelector('#keys input[name="privkey"]').value = window.privkey;
             document.querySelector('#keys input[name="privkey"]').disabled = true;
-            displayProfile(window.pubkey, response.profile);
+            displayProfile(window.pubkey, response.profile.event);
             window.location.reload();
           });
 
@@ -1005,7 +1005,7 @@ function updateOverlay() {
         console.log("Removing PopUp...");
         currentPopUps.splice(i, 1);
       } else if (playerState != 'playing') {
-        console.log("Player isn't playing...")
+        // console.log("Player isn't playing...")
       } else if (currentPopUps[i] && currentPopUps[i].startTimestamp + 10 > getCurrentTime()) {
         console.log("Not enough of the video has been watched / scrolled past...")
       } else if (currentPopUps[i] && currentPopUps[i].expiryTime > performance.now()) {
@@ -1046,13 +1046,15 @@ function getNostrKeys() {
   // The Service Worker might be asleep when this is called, and it takes a bit to wake up the DB.
   // Disregard any responses that return null, because they're from when the DB is offline.
   browser.runtime.sendMessage({ action: "getNostrKeys" }, response => {
-    if (response.privkey != null) {
+    if (response && response.privkey != null && response.profile && response.profile.dbok != null) {
       window.privkey = response.privkey;
       window.pubkey = response.pubkey;
       window.npub = response.npub;
       document.querySelector('#keys input[name="privkey"]').value = window.privkey;
       document.querySelector('#keys input[name="privkey"]').disabled = true;
-      displayProfile(window.pubkey, response.profile);
+      console.log('response.profile:');
+      console.log(response.profile);
+      displayProfile(window.pubkey, response.profile.event);
     } else {
       setTimeout(getNostrKeys(), 250);
     }
