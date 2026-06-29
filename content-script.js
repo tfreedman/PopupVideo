@@ -794,8 +794,12 @@ function newNoteSubmit(event) {
     name = document.querySelector('#watch7-content meta[itemprop="name"]').content;
   }
 
+  var timestamp = getCurrentTime();
+  if (timestamp !== null) {
+    timestamp = timestamp.toString();
+  }
 
-  var e = {created_at: Math.floor(Date.now() / 1000), kind: 1, tags: [['r', url], ['t', 'popupvideo'], ['name', name]], content: data.message.value};
+  var e = {created_at: Math.floor(Date.now() / 1000), kind: 1, tags: [['r', url], ['t', 'popupvideo'], ['name', name], ['timestamp', timestamp]], content: data.message.value};
 
   console.log('event: ' + e);
   var privkey = document.querySelector('#keys input[name="privkey"]').value;
