@@ -555,6 +555,7 @@ initSqlJs(config).then(function(SQL){
 
       return true;
     });
+    return note;
   }
 
   self.setNostrKeys = function(privkey) {

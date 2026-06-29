@@ -498,6 +498,7 @@ function updateProfile(event) {
 
     browser.runtime.sendMessage({ action: "uploadNote", note: response}, r => {
       console.log("Sent (kind 0)" + JSON.stringify(r));
+      displayProfile(window.pubkey, r);
       MicroModal.close('modal-account');
     });
   });
