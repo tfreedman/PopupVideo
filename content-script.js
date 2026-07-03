@@ -8,7 +8,9 @@ navigation.addEventListener("navigate", e => {
 
 var currentPopUps = [];
 var testObject = null;
+
 window.currentURL = null;
+window.allPopUps = null;
 
 var enableEmoji = false;
 if (enableEmoji) {
@@ -617,18 +619,14 @@ waitForEl("#movie_player").then(() => {
 
   if (document.querySelector('#center .modal-all-popups-button') === null) {
     createAllPopUpsPopUp();
-    var allPopUps = document.createElement("a");
-    allPopUps.dataset.tippy = "PopUps";
-    allPopUps.classList.add("pvbutton");
-    allPopUps.classList.add('modal-all-popups-button');
-    allPopUps.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM16 9V7H8V9H16ZM8 17V15H16V17H8ZM16 11H8V13H16V11Z" /></svg>';
-    allPopUps.dataset.micromodalTrigger = "modal-all-popups";
+    var viewAllPopUps = document.createElement("a");
+    viewAllPopUps.dataset.tippy = "PopUps";
+    viewAllPopUps.classList.add("pvbutton");
+    viewAllPopUps.classList.add('modal-all-popups-button');
+    viewAllPopUps.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM16 9V7H8V9H16ZM8 17V15H16V17H8ZM16 11H8V13H16V11Z" /></svg>';
+    viewAllPopUps.dataset.micromodalTrigger = "modal-all-popups";
     if (document.querySelector('#center') !== null) {
-      document.querySelector('#center').appendChild(allPopUps);
-    }
-
-    allPopUps.onclick = function(event) {
-      getPopUps();
+      document.querySelector('#center').appendChild(viewAllPopUps);
     }
   }
 
@@ -1037,6 +1035,7 @@ function getPopUps() {
   // Disregard any responses that return null, because they're from when the DB is offline.
   browser.runtime.sendMessage({ action: "getPopUps" }, response => {
     if (response != null) {
+      window.allPopUps = response;
       displayAllPopUps(response);
     } else {
       setTimeout(getPopUps(), 250);
@@ -1091,4 +1090,8 @@ function updateURL(e) {
   }
 
   console.log('New URL: ' + window.currentURL + ' - Old URL: ' + oldURL);
+  if (oldURL != window.currentURL) {
+    console.log('New URL - Getting Popups...');
+    getPopUps();
+  }
 }
