@@ -2,9 +2,13 @@ window.pubkey = null;
 window.privkey = null;
 window.npub = null;
 
+navigation.addEventListener("navigate", e => {
+  updateURL(e);
+});
+
 var currentPopUps = [];
 var testObject = null;
-
+window.currentURL = null;
 
 var enableEmoji = false;
 if (enableEmoji) {
@@ -565,8 +569,6 @@ waitForEl("#movie_player").then(() => {
 
   updateOverlay();
 
-  //document.querySelector('#popup-video').appendChild(renderPopUp(testObject));
-
   if (document.querySelector('#center .modal-account-button') === null) {
     createAccountPopUp();
     var account = document.createElement("a");
@@ -645,6 +647,8 @@ waitForEl("#movie_player").then(() => {
     window.relays = response.relays;
     displayRelays(response.relays, response.debugging);
   });
+
+  updateURL();
 });
 
 function displayProfile(pubkey, event) {
@@ -1072,3 +1076,19 @@ function getNostrKeys() {
   });
 }
 
+function updateURL(e) {
+  var oldURL = window.currentURL;
+  if (typeof e !== 'undefined') {
+    window.currentURL = e.destination.url;
+    //const regex = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
+    //window.currentURL = regex.exec(e.destination.url)[3];
+  } else {
+    if (document.querySelector('#watch7-content meta[itemprop="url"]') !== null) {
+      window.currentURL = document.querySelector('#watch7-content meta[itemprop="url"]').content;
+    } else {
+      window.currentURL = window.location.href;
+    }
+  }
+
+  console.log('New URL: ' + window.currentURL + ' - Old URL: ' + oldURL);
+}
