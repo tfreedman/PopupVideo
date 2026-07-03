@@ -62,6 +62,10 @@
 }
 
 body {
+  ytd-masthead[dark] #center svg {
+    fill: #FFF;
+  }
+
   #center {
     .pvbutton {
       &:first-of-type {margin-left: 20px}
