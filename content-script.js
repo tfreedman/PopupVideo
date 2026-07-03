@@ -1030,9 +1030,12 @@ function updateOverlay() {
   }, 500);
 };
 
-function getPopUps() {
+function getPopUps(videoID) {
   // The Service Worker might be asleep when this is called, and it takes a bit to wake up the DB.
   // Disregard any responses that return null, because they're from when the DB is offline.
+
+  // Don't do anything with videoID right now - just load the same popups on every single URL.
+
   browser.runtime.sendMessage({ action: "getPopUps" }, response => {
     if (response != null) {
       window.allPopUps = response;
@@ -1076,11 +1079,14 @@ function getNostrKeys() {
 }
 
 function updateURL(e) {
+  // TODO: actually extract the video ID from the current URL, normalize it, and only load those popups
+
   var oldURL = window.currentURL;
+  var videoID = null;
+
+
   if (typeof e !== 'undefined') {
     window.currentURL = e.destination.url;
-    //const regex = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
-    //window.currentURL = regex.exec(e.destination.url)[3];
   } else {
     if (document.querySelector('#watch7-content meta[itemprop="url"]') !== null) {
       window.currentURL = document.querySelector('#watch7-content meta[itemprop="url"]').content;
@@ -1089,9 +1095,16 @@ function updateURL(e) {
     }
   }
 
+  if (window.currentURL.includes('/embed/')) {
+    return; // This is a bug, where random /embed/ URLs are supposedly the page you're on
+  }
+
   console.log('New URL: ' + window.currentURL + ' - Old URL: ' + oldURL);
   if (oldURL != window.currentURL) {
+    const regex = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
+    console.log('Video ID: ' + regex.exec(window.currentURL)[1]);
+
     console.log('New URL - Getting Popups...');
-    getPopUps();
+    getPopUps(videoID);
   }
 }
