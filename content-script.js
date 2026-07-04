@@ -950,8 +950,14 @@ function displayPopUp(response) {
 
 function displayAllPopUps(response) {
   document.querySelector('#modal-all-popups-content').innerHTML = '';
+  window.currentPopUps = [];
   for (const element of response) {
     document.querySelector('#modal-all-popups-content').appendChild(displayPopUp(element));
+
+    popup = {div: renderPopUp(element), startTime: performance.now(), startTimestamp: getCurrentTime(), expiryTime: performance.now() + (10 * 1000), visible: true}
+    popup.element = document.querySelector('#popup-video').appendChild(popup.div);
+    console.log('Adding PopUp - Expiring at ' + popup.expiryTime);
+    window.currentPopUps.push(popup);
   }
 }
 
@@ -1004,16 +1010,9 @@ function updateOverlay() {
   setInterval(function() {
     var playerState = getPlayerState();
 
-    if (currentPopUps.length == 0) {
-      // Hack - just keep drawing the same popup for the time being
-      popup = {div: renderPopUp(testObject), startTime: performance.now(), startTimestamp: getCurrentTime(), expiryTime: performance.now() + (10 * 1000)}
-      popup.element = document.querySelector('#popup-video').appendChild(popup.div);
-      console.log('Adding PopUp - Expiring at ' + popup.expiryTime);
-      currentPopUps.push(popup);
-    }
-
     for (let i = currentPopUps.length - 1; i >= 0; i--) {
       if (currentPopUps[i].expiryTime < performance.now() && currentPopUps[i].startTimestamp + 10 < getCurrentTime() && playerState == 'playing') {
+        currentPopUps[i].visible = false;
         currentPopUps[i].element.remove();
         console.log("Removing PopUp...");
         currentPopUps.splice(i, 1);
