@@ -433,8 +433,22 @@ initSqlJs(config).then(function(SQL){
         onevent(event) {
           toggleConnectionState(true);
           if (event && event.pubkey && event.content && event.kind == 1 && self.NostrTools.verifyEvent(event, event.pubkey) && event.created_at > 1750046400) {
-            importToast(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
-            dirty = true;
+            // All good for Nostr - but is it a valid PopUp Video note?
+
+            var valid = false;
+
+            event["tags"].forEach((tag) => {
+              if (tag[0] == "timestamp") {
+                if (typeof tag[1] !== 'undefined' && Number(tag[1])) {
+                  valid = true;
+                }
+              }
+            });
+
+            if (valid) {
+              importToast(event, self.hasFinishedLoading); // if the page has finished loading, save the DB in response to any change.
+              dirty = true;
+            }
           }
         },
         oneose() {
