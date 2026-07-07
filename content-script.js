@@ -813,7 +813,10 @@ function newNoteSubmit(event) {
         data.reset();
       }
       MicroModal.close('modal-new-popup');
-      setTimeout(updateURL(undefined, true), 1000); // Reload all popups when you submit a new one
+      console.log('Waiting 1 second before reloading popups?');
+      setTimeout(function() {
+        updateURL(undefined, true) // TODO: implement a better version of this
+      } ,1000); // Reload all popups when you submit a new one
     });
   });
 }
