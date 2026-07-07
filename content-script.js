@@ -1062,7 +1062,7 @@ function getNostrKeys() {
   // The Service Worker might be asleep when this is called, and it takes a bit to wake up the DB.
   // Disregard any responses that return null, because they're from when the DB is offline.
   browser.runtime.sendMessage({ action: "getNostrKeys" }, response => {
-    if (response && response.privkey != null && response.profile && response.profile.dbok != null) {
+    if (response && response.privkey != undefined && response.profile && response.profile.dbok != undefined) {
       window.privkey = response.privkey;
       window.pubkey = response.pubkey;
       window.npub = response.npub;
