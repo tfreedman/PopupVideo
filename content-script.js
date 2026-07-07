@@ -10,6 +10,8 @@ var currentPopUps = [];
 var testObject = null;
 
 window.currentURL = null;
+window.currentVideoName = null;
+
 window.allPopUps = null;
 
 var enableEmoji = false;
@@ -788,24 +790,15 @@ function newNoteSubmit(event) {
 
   var data = event.target;
 
-  var url = null;
-  if (document.querySelector('#watch7-content meta[itemprop="url"]') !== null) {
-    url = document.querySelector('#watch7-content meta[itemprop="url"]').content;
-  } else {
-    url = window.location.href;
-  }
-
-  var name = null;
-  if (document.querySelector('#watch7-content meta[itemprop="name"]') !== null) {
-    name = document.querySelector('#watch7-content meta[itemprop="name"]').content;
-  }
-
   var timestamp = getCurrentTime();
   if (timestamp !== null) {
     timestamp = timestamp.toString();
   }
 
-  var e = {created_at: Math.floor(Date.now() / 1000), kind: 1, tags: [['r', url], ['t', 'popupvideo'], ['name', name], ['timestamp', timestamp]], content: data.message.value};
+  var e = {created_at: Math.floor(Date.now() / 1000), kind: 1, tags: [['r', window.currentURL], ['t', 'popupvideo'], ['name', window.currentVideoName], ['timestamp', timestamp]], content: data.message.value};
+
+  console.log('Current Video is supposedly ' + name + ' @ URL:' + window.currentURL);
+
 
   console.log('event: ' + e);
   var privkey = document.querySelector('#keys input[name="privkey"]').value;
@@ -820,6 +813,7 @@ function newNoteSubmit(event) {
         data.reset();
       }
       MicroModal.close('modal-new-popup');
+      setTimeout(updateURL(undefined, true), 1000); // Reload all popups when you submit a new one
     });
   });
 }
@@ -1077,7 +1071,7 @@ function getNostrKeys() {
   });
 }
 
-function updateURL(e) {
+function updateURL(e, force) {
   // TODO: actually extract the video ID from the current URL, normalize it, and only load those popups
 
   var oldURL = window.currentURL;
@@ -1099,7 +1093,7 @@ function updateURL(e) {
   }
 
   console.log('New URL: ' + window.currentURL + ' - Old URL: ' + oldURL);
-  if (oldURL != window.currentURL) {
+  if (oldURL != window.currentURL || force == true) {
     const regex = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
     console.log('Video ID: ' + regex.exec(window.currentURL)[1]);
 
@@ -1107,3 +1101,25 @@ function updateURL(e) {
     getPopUps(videoID);
   }
 }
+
+function updateName() {
+  console.log('UpdateName fired!');
+  var videoName;
+  try {
+    if (typeof document.querySelector('a.ytp-title-link').textContent !== undefined) {
+      videoName = document.querySelector('a.ytp-title-link').textContent;
+      console.log('New Video Name is apparently ' + videoName);
+      window.currentVideoName = videoName;
+    }
+  }
+ catch (e) {
+    console.log("Couldn't grab the video details on page change...");
+  }
+}
+
+const playerUpdateEvent = window.location.hostname === 'm.youtube.com' ? 'state-navigateend' : 'yt-player-updated';
+window.addEventListener(playerUpdateEvent, updateName, true);
+
+document.addEventListener('yt-page-data-updated', () => {
+  updateName();
+});
