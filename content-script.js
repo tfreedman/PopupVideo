@@ -951,7 +951,22 @@ function displayAllPopUps(response) {
   for (const element of response) {
     document.querySelector('#modal-all-popups-content').appendChild(displayPopUp(element));
 
-    popup = {div: renderPopUp(element), startTime: performance.now(), startTimestamp: getCurrentTime(), expiryTime: performance.now() + (10 * 1000), visible: true}
+    var note = JSON.parse(element.note);
+
+    var startTimestamp = null;
+    note["tags"].forEach((tag) => {
+      if (tag[0] == "timestamp") {
+        if (typeof tag[1] !== 'undefined' && Number(tag[1])) {
+          startTimestamp = Number(tag[1]);
+        }
+      }
+    });
+
+    if (startTimestamp == null) {
+      continue;
+    }
+
+    popup = {div: renderPopUp(element), startTime: performance.now(), startTimestamp: startTimestamp, expiryTime: performance.now() + (10 * 1000), visible: true}
     popup.element = document.querySelector('#popup-video').appendChild(popup.div);
     console.log('Adding PopUp - Expiring at ' + popup.expiryTime);
     window.currentPopUps.push(popup);
