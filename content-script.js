@@ -1031,7 +1031,7 @@ function updateOverlay() {
         popup = window.currentPopUps[i];
         visibility = popup.div.checkVisibility();
 
-        if (visibility === false && popup.startTimestamp >= currentTime && currentTime < popup.endTimestamp) {
+        if (visibility === false && currentTime >= popup.startTimestamp && currentTime < popup.endTimestamp) {
           popup.div.style.display = 'block';
           console.log("Showing PopUp...");
         } else if (visibility === true && currentTime > popup.endTimestamp) {
