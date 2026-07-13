@@ -17,6 +17,8 @@ exportFunction(writeClipboardText, window, {
 function getPlayerState() {
   if (document.querySelector('#movie_player').classList.contains('paused-mode')) {
     return 'paused';
+  } else if (document.querySelector('#movie_player').classList.contains('unstarted-mode')) {
+    return 'unstarted';
   } else if (document.querySelector('#movie_player').classList.contains('playing-mode')) {
     return 'playing';
   } else {
