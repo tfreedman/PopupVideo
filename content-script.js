@@ -6,7 +6,7 @@ navigation.addEventListener("navigate", e => {
   updateURL(e);
 });
 
-var currentPopUps = [];
+window.currentPopUps = [];
 var testObject = null;
 
 window.currentURL = null;
@@ -966,9 +966,10 @@ function displayAllPopUps(response) {
       continue;
     }
 
-    popup = {div: renderPopUp(element), startTime: performance.now(), startTimestamp: startTimestamp, expiryTime: performance.now() + (10 * 1000), visible: true}
+    popup = {div: renderPopUp(element), startTimestamp: startTimestamp, endTimestamp: startTimestamp + 10}
+    popup.div.style.display = 'none';
     popup.element = document.querySelector('#popup-video').appendChild(popup.div);
-    console.log('Adding PopUp - Expiring at ' + popup.expiryTime);
+    console.log('Adding PopUp - Expiring at ' + popup.endTimestamp);
     window.currentPopUps.push(popup);
   }
 }
@@ -1021,23 +1022,27 @@ function newNote(node, params) {
 function updateOverlay() {
   setInterval(function() {
     var playerState = getPlayerState();
+    var currentTime = getCurrentTime();
+    var popup;
+    var visibility;
 
-    for (let i = currentPopUps.length - 1; i >= 0; i--) {
-      if (currentPopUps[i].expiryTime < performance.now() && currentPopUps[i].startTimestamp + 10 < getCurrentTime() && playerState == 'playing') {
-        currentPopUps[i].visible = false;
-        currentPopUps[i].element.remove();
-        console.log("Removing PopUp...");
-        currentPopUps.splice(i, 1);
-      } else if (playerState != 'playing') {
-        // console.log("Player isn't playing...")
-      } else if (currentPopUps[i] && currentPopUps[i].startTimestamp + 10 > getCurrentTime()) {
-        console.log("Not enough of the video has been watched / scrolled past...")
-      } else if (currentPopUps[i] && currentPopUps[i].expiryTime > performance.now()) {
-        console.log("PopUp hasn't expired...")
-      } else {
-        console.log("Waiting...");
+    if (playerState == 'playing') {
+      for (let i = window.currentPopUps.length - 1; i >= 0; i--) {
+        popup = window.currentPopUps[i];
+        visibility = popup.div.checkVisibility();
+
+        if (visibility === false && popup.startTimestamp >= currentTime && currentTime < popup.endTimestamp) {
+          popup.div.style.display = 'block';
+          console.log("Showing PopUp...");
+        } else if (visibility === true && currentTime > popup.endTimestamp) {
+          popup.div.style.display = 'none';
+          console.log("Hiding PopUp...");
+        }
       }
+    } else {
+      //console.log("Player isn't playing (" + playerState + ")");
     }
+
   }, 500);
 };
 
