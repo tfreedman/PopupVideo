@@ -946,7 +946,8 @@ function displayPopUp(response) {
 }
 
 function displayAllPopUps(response) {
-  document.querySelector('#modal-all-popups-content').innerHTML = '';
+  document.querySelector('#modal-all-popups-content').innerHTML = ''; // Wipe the popup modal
+  document.querySelector('#popup-video').innerHTML = ''; // Wipe the player's UI
   window.currentPopUps = [];
   for (const element of response) {
     document.querySelector('#modal-all-popups-content').appendChild(displayPopUp(element));
@@ -972,6 +973,10 @@ function displayAllPopUps(response) {
     console.log('Adding PopUp - Expiring at ' + popup.endTimestamp);
     window.currentPopUps.push(popup);
   }
+
+  window.currentPopUps.sort(function(a, b) {
+    return a.startTimestamp - b.startTimestamp;
+  });
 }
 
 function newNote(node, params) {
