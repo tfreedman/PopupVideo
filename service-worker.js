@@ -35,7 +35,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === "getProfile") {
     sendResponse({profile: getProfile(self.pubkey)}); // sw ok
   } else if (message.action === "getPopUps") {
-    sendResponse(getPopUps()); // sw ok
+    sendResponse(getPopUps(message.videoID)); // sw ok
   } else if (message.action === "signNote") {
     sendResponse(signNote(message.event, message.privkey)); // sw ok
   } else if (message.action === "uploadNote") {
@@ -239,8 +239,6 @@ initSqlJs(config).then(function(SQL){
 
     const regex = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
     var videoID = regex.exec(taggedUrl)[1];
-
-    console.log('Video ID:' + videoID);
 
     const url = new URL(taggedUrl);
     var domain = url.hostname.toLowerCase();
@@ -602,7 +600,7 @@ initSqlJs(config).then(function(SQL){
     return {event: null, dbok: dbok}
   }
 
-  self.getPopUps = function() {
+  self.getPopUps = function(videoID) {
     if (self.db == null) {
       init();
     }
@@ -617,9 +615,7 @@ initSqlJs(config).then(function(SQL){
     }
 
     stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 1 ORDER BY created_at DESC");
-
-    //stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 1 AND url = $url ORDER BY created_at DESC");
-    //stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 42 ORDER BY created_at DESC");
+    //stmt.bind({$video_id: videoID});
 
     var row;
 

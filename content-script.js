@@ -1049,15 +1049,12 @@ function updateOverlay() {
 function getPopUps(videoID) {
   // The Service Worker might be asleep when this is called, and it takes a bit to wake up the DB.
   // Disregard any responses that return null, because they're from when the DB is offline.
-
-  // Don't do anything with videoID right now - just load the same popups on every single URL.
-
-  browser.runtime.sendMessage({ action: "getPopUps" }, response => {
+  browser.runtime.sendMessage({ action: "getPopUps", videoID: videoID }, response => {
     if (response != null) {
       window.allPopUps = response;
       displayAllPopUps(response);
     } else {
-      setTimeout(getPopUps(), 250);
+      setTimeout(function() {getPopUps(videoID)}, 250);
     }
   });
 }
