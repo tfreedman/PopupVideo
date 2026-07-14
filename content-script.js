@@ -949,9 +949,10 @@ function displayAllPopUps(response) {
   document.querySelector('#modal-all-popups-content').innerHTML = ''; // Wipe the popup modal
   document.querySelector('#popup-video').innerHTML = ''; // Wipe the player's UI
   window.currentPopUps = [];
-  for (const element of response) {
-    document.querySelector('#modal-all-popups-content').appendChild(displayPopUp(element));
+  var popups = [];
 
+  // Parse them, then sort them, then display them.
+  for (const element of response) {
     var note = JSON.parse(element.note);
 
     var startTimestamp = null;
@@ -966,17 +967,22 @@ function displayAllPopUps(response) {
     if (startTimestamp == null) {
       continue;
     }
-
     popup = {div: renderPopUp(element), startTimestamp: startTimestamp, endTimestamp: startTimestamp + 10}
+    popups.push(popup);
+
+    // On the all-popups modal, we display popups sorted by post date. As the video plays, we display
+    // them at the requested timestamp. The modal content has to be displayed first before sorting below.
+    document.querySelector('#modal-all-popups-content').appendChild(displayPopUp(element));
+  }
+
+  popups.sort((a, b) => a.startTimestamp - b.startTimestamp);
+
+  for (const popup of popups) {
     popup.div.style.display = 'none';
-    popup.element = document.querySelector('#popup-video').appendChild(popup.div);
+    popup.element = document.querySelector('#popup-video').prepend(popup.div);
     console.log('Adding PopUp - Expiring at ' + popup.endTimestamp);
     window.currentPopUps.push(popup);
   }
-
-  window.currentPopUps.sort(function(a, b) {
-    return a.startTimestamp - b.startTimestamp;
-  });
 }
 
 function newNote(node, params) {
