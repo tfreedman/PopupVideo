@@ -237,11 +237,16 @@ initSqlJs(config).then(function(SQL){
       }
     });
 
+    const regex = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
+    var videoID = regex.exec(taggedUrl)[1];
+
+    console.log('Video ID:' + videoID);
+
     const url = new URL(taggedUrl);
     var domain = url.hostname.toLowerCase();
 
     console.log('Inserting ' + value['id'] + ' - (' + domain + ') into Toasts DB...');
-    self.db.run("INSERT OR IGNORE INTO toasts (id, created_at, domain, url, pubkey, kind, note, favourite, read_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [value['id'], value['created_at'], domain, taggedUrl, value['pubkey'], value['kind'], note, false, 0]);
+    self.db.run("INSERT OR IGNORE INTO toasts (id, created_at, domain, url, pubkey, kind, note, favourite, read_at, video_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [value['id'], value['created_at'], domain, taggedUrl, value['pubkey'], value['kind'], note, false, 0, videoID]);
 
     if (immediateWrite) {
       syncDatabase();
@@ -391,7 +396,7 @@ initSqlJs(config).then(function(SQL){
     } else {
       console.log("Database version mismatch or undefined - creating a new DB");
       self.db = new SQL.Database();
-      self.db.run("CREATE TABLE IF NOT EXISTS toasts (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, domain TEXT NOT NULL, url TEXT NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL, favourite BOOLEAN NOT NULL, read_at INTEGER NOT NULL);");
+      self.db.run("CREATE TABLE IF NOT EXISTS toasts (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, domain TEXT NOT NULL, url TEXT NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL, favourite BOOLEAN NOT NULL, read_at INTEGER NOT NULL, video_id TEXT NOT NULL);");
       self.db.run("CREATE TABLE IF NOT EXISTS notes (id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL, pubkey TEXT NOT NULL, kind INTEGER NOT NULL, note TEXT NOT NULL);");
       self.db.run("CREATE INDEX idx_toasts_domain ON toasts (domain);")
     }
@@ -611,10 +616,10 @@ initSqlJs(config).then(function(SQL){
       users[event.pubkey] = event;
     }
 
-    stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 1 ORDER BY created_at DESC"); // Ignore URL or Domain for now
+    stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 1 ORDER BY created_at DESC");
+
     //stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 1 AND url = $url ORDER BY created_at DESC");
     //stmt = self.db.prepare("SELECT * FROM notes WHERE kind = 42 ORDER BY created_at DESC");
-    //stmt.bind({$url: mode.substring(4)});
 
     var row;
 
