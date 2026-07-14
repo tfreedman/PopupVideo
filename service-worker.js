@@ -601,6 +601,8 @@ initSqlJs(config).then(function(SQL){
   }
 
   self.getPopUps = function(videoID) {
+    console.log('Video ID: ' + videoID);
+
     if (self.db == null) {
       init();
     }
@@ -614,8 +616,8 @@ initSqlJs(config).then(function(SQL){
       users[event.pubkey] = event;
     }
 
-    stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 1 ORDER BY created_at DESC");
-    //stmt.bind({$video_id: videoID});
+    stmt = self.db.prepare("SELECT * FROM toasts WHERE kind = 1 AND video_id = $video_id ORDER BY created_at DESC");
+    stmt.bind({$video_id: videoID});
 
     var row;
 

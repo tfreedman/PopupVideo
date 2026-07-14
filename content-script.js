@@ -1054,7 +1054,7 @@ function getPopUps(videoID) {
       window.allPopUps = response;
       displayAllPopUps(response);
     } else {
-      setTimeout(function() {getPopUps(videoID)}, 250);
+      setTimeout(function(videoID) {getPopUps(videoID)}, 250);
     }
   });
 }
@@ -1115,7 +1115,8 @@ function updateURL(e, force) {
   console.log('New URL: ' + window.currentURL + ' - Old URL: ' + oldURL);
   if (oldURL != window.currentURL || force == true) {
     const regex = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
-    console.log('Video ID: ' + regex.exec(window.currentURL)[1]);
+    videoID = regex.exec(window.currentURL)[1];
+    console.log('Video ID: ' + videoID);
 
     console.log('New URL - Getting Popups...');
     getPopUps(videoID);
