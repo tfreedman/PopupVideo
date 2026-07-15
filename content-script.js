@@ -864,6 +864,15 @@ function displayPopUp(response) {
   var note = JSON.parse(response.note);
   var message = note.content;
 
+  var startTimestamp = null;
+  note["tags"].forEach((tag) => {
+    if (tag[0] == "timestamp") {
+      if (typeof tag[1] !== 'undefined' && Number(tag[1])) {
+        startTimestamp = Number(tag[1]);
+      }
+    }
+  });
+
   var innerHTML = `
     <div>
       <div class="author">
@@ -876,7 +885,7 @@ function displayPopUp(response) {
       <div class="content">
         <header>
           <img src="${hashicon(response.pubkey).toDataURL()}" class="hicon" />
-          <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><span class="username">${username}</span></a>
+          <a class="modal-profile-button" data-micromodal-trigger="modal-profile" href="#"><span class="username">${username}</span></a>@ ${fancyTimeFormat(startTimestamp)}
           <span class="empty"></span>
           <time class="created-at" data-tippy="${epochTimestamp.toUTCString()}" datetime="${epochTimestamp}">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M464 256a208 208 0 1 1 -416 0 208 208 0 1 1 416 0zM0 256a256 256 0 1 0 512 0 256 256 0 1 0 -512 0zM232 120l0 136c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2 280 120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"/></svg>
@@ -1155,3 +1164,22 @@ window.addEventListener(playerUpdateEvent, updateName, true);
 document.addEventListener('yt-page-data-updated', () => {
   updateName();
 });
+
+function fancyTimeFormat(duration) {
+  // Hours, minutes and seconds
+  const hrs = ~~(duration / 3600);
+  const mins = ~~((duration % 3600) / 60);
+  const secs = ~~duration % 60;
+
+  // Output like "1:01" or "4:03:59" or "123:03:59"
+  let ret = "";
+
+  if (hrs > 0) {
+    ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
+  }
+
+  ret += "" + mins + ":" + (secs < 10 ? "0" : "");
+  ret += "" + secs;
+
+  return ret;
+}
