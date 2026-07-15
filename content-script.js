@@ -205,7 +205,7 @@ function createInfoPopUp() {
           <p>For privacy reasons, PopUp Video scrapes all PopUps from the relays you're connected to, stores them in your browser, and then filters based on the exact video ID you're looking at to avoid leaking your browser history.</p>
 
           <h2>PopUps</h2>
-          <p>A PopUp is defined as a kind 1 event, with tags <em>[['r', "https://www.youtube.com/watch?v=XXXXXXX"], ['t', 'popupvideo'], ['name', 'Video Name']]</em>. </p>
+          <p>A PopUp is defined as a kind 1 event, with tags <em>[['r', "https://www.youtube.com/watch?v=XXXXXXX"], ['t', 'popupvideo'], ['name', 'Video Name'], ["timestamp","1.234"]]</em>. </p>
 
           <p>PopUp Video does not implement NIP-07, and it is unclear if it's possible to ever be compatible with extensions like nos2x.</p>
         </main>
