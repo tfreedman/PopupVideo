@@ -58,7 +58,7 @@ function updateProfileModal(event) {
   var hasPicture = false;
   var hasBanner = false;
 
-  if (p.dataset.content !== "") {
+  if (typeof p.dataset.content !== 'undefined' && p.dataset.content !== "") {
     var profile = JSON.parse(p.dataset.content);
     if (profile.name !== undefined) {
       document.querySelector('#modal-profile #modal-profile-title').innerHTML = profile.name;
@@ -91,7 +91,7 @@ function updateProfileModal(event) {
     }
   }
   if (!hasPicture) {
-    document.querySelector('#modal-profile .avatar img').src = hashicon(pubKey).toDataURL();
+    document.querySelector('#modal-profile .avatar img').src = hashicon(p.dataset.pubkey).toDataURL();
     document.querySelector('#modal-profile .avatar img').classList.add('hashicon');
   }
   if (!hasBanner) {
