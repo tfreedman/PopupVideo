@@ -1,6 +1,12 @@
 self.mode = "PopUpVideo";
 
-var storage = browser.storage; // Add chrome support later
+if (typeof browser !== "undefined") {
+  var storage = browser.storage;
+  var br = browser.runtime;
+} else if (typeof chrome !== "undefined") {
+  var storage = chrome.storage;
+  var br = chrome.runtime;
+}
 var version = 0; // The version of this script
 
 var _privkey = null;
@@ -11,7 +17,7 @@ var _database;
 
 const readLocalStorage = async (key) => {
   return new Promise((resolve, reject) => {
-    browser.storage.local.get([key], function (result) {
+    storage.local.get([key], function (result) {
       if (result[key] === undefined) {
         reject();
       } else {
@@ -25,23 +31,23 @@ var pubkey = null;
 var getPopUps = null;
 var relays = null;
 
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+br.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getNostrKeys") {
-    sendResponse({privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey), profile: getProfile(self.pubkey)}); // sw ok
+    sendResponse({privkey: self._privkey, pubkey: self.pubkey, npub: self.NostrTools.nip19.npubEncode(self.pubkey), profile: getProfile(self.pubkey)});
   } else if (message.action === "setNostrKeys") {
-    sendResponse(setNostrKeys(message.privkey)); // sw ok
+    sendResponse(setNostrKeys(message.privkey));
   } else if (message.action === "getRelays") {
-    sendResponse(getRelays()); // sw ok
+    sendResponse(getRelays());
   } else if (message.action === "getProfile") {
-    sendResponse({profile: getProfile(self.pubkey)}); // sw ok
+    sendResponse({profile: getProfile(self.pubkey)});
   } else if (message.action === "getPopUps") {
-    sendResponse(getPopUps(message.videoID)); // sw ok
+    sendResponse(getPopUps(message.videoID));
   } else if (message.action === "signNote") {
-    sendResponse(signNote(message.event, message.privkey)); // sw ok
+    sendResponse(signNote(message.event, message.privkey));
   } else if (message.action === "uploadNote") {
-    sendResponse(uploadNote(message.note)); // sw ok
+    sendResponse(uploadNote(message.note));
   } else if (message.action === "decodeNostrKeys") {
-    sendResponse(self.NostrTools.nip19.decode(message.keys)); // sw ok
+    sendResponse(self.NostrTools.nip19.decode(message.keys));
   }
 });
 

@@ -6,6 +6,13 @@ navigation.addEventListener("navigate", e => {
   updateURL(e);
 });
 
+window.br = null;
+if (typeof browser !== "undefined") {
+  window.br = browser.runtime;
+} else if (typeof chrome !== "undefined") {
+  window.br = chrome.runtime;
+}
+
 window.currentPopUps = [];
 var testObject = null;
 
@@ -223,8 +230,11 @@ function createAccountPopUp() {
   div.id = "modal-account";
   div.ariaHidden = "true";
 
- var avatarURL = browser.runtime.getURL("icons/circle-user.svg"); // Firefox
-//  var avatarURL = chrome.extension.getURL("icons/circle-user.svg"); // Chrome
+  if (typeof browser !== "undefined") {
+    var avatarURL = browser.runtime.getURL("icons/circle-user.svg"); // Firefox
+  } else if (typeof chrome !== "undefined") {
+    var avatarURL = chrome.extension.getURL("icons/circle-user.svg"); // Chrome
+  }
 
   div.innerHTML = `
     <div class="modal__overlay" tabindex="-1" data-micromodal-close>
@@ -371,7 +381,7 @@ function createAccountPopUp() {
   }
 
   function cancelUpdateKeys() {
-    browser.runtime.sendMessage({ action: "decodeNostrKeys", keys: window.privkey}, response => {
+    window.br.sendMessage({ action: "decodeNostrKeys", keys: window.privkey}, response => {
       sk = Uint8Array.from(response.data);
       document.querySelector('#keys input[name="privkey"]').value = window.privkey;
       document.querySelector('#keys input[name="privkey"]').disabled = true;
@@ -382,12 +392,12 @@ function createAccountPopUp() {
 
   function updateKeys() {
     try { // Basic validation - if we can generate an npub from the input, it's a valid key
-      browser.runtime.sendMessage({ action: "decodeNostrKeys", keys: document.querySelector('#keys input[name="privkey"]').value}, response => {
+      window.br.sendMessage({ action: "decodeNostrKeys", keys: document.querySelector('#keys input[name="privkey"]').value}, response => {
         if (response.data) {
           document.querySelector('#keys .edit-container').style.display = 'block'
           document.querySelector('#keys .submit-container').style.display = 'none';
 
-          browser.runtime.sendMessage({ action: "setNostrKeys" }, response => {
+          window.br.sendMessage({ action: "setNostrKeys" }, response => {
             window.privkey = response.privkey;
             window.pubkey = response.pubkey;
             window.npub = response.npub;
@@ -501,10 +511,10 @@ function updateProfile(event) {
     content: JSON.stringify(content)
   }
 
-  browser.runtime.sendMessage({ action: "signNote", event: e, privkey: document.querySelector('#keys input[name="privkey"]').value }, response => {
+  window.br.sendMessage({ action: "signNote", event: e, privkey: document.querySelector('#keys input[name="privkey"]').value }, response => {
     console.log('Received signed note back from service worker: ' + JSON.stringify(response));
 
-    browser.runtime.sendMessage({ action: "uploadNote", note: response}, r => {
+    window.br.sendMessage({ action: "uploadNote", note: response}, r => {
       console.log("Sent (kind 0)" + JSON.stringify(r));
       displayProfile(window.pubkey, r);
       MicroModal.close('modal-account');
@@ -643,7 +653,7 @@ waitForEl("#movie_player").then(() => {
 
   getProfile();
 
-  browser.runtime.sendMessage({ action: "getRelays" }, response => {
+  window.br.sendMessage({ action: "getRelays" }, response => {
     window.relays = response.relays;
     displayRelays(response.relays, response.debugging);
   });
@@ -744,7 +754,7 @@ const signNoteForFileUpload = async(files, message, kind, urlBox) => {
     var tags = [["t","upload"], ["expiration", (Math.floor(Date.now() / 1000) + 60).toString()], ["x", hash]];
     var e = {created_at: Math.floor(Date.now() / 1000), kind: 24242, tags: tags, content: ""};
 
-    browser.runtime.sendMessage({ action: "signNote", event: e, privkey: document.querySelector('#keys input[name="privkey"]').value }, response => {
+    window.br.sendMessage({ action: "signNote", event: e, privkey: document.querySelector('#keys input[name="privkey"]').value }, response => {
       console.log('Received signed note back from service worker: ' + JSON.stringify(response));
 
       uploadFile(formData, message, urlBox, JSON.stringify(response));
@@ -804,11 +814,11 @@ function newNoteSubmit(event) {
   var privkey = document.querySelector('#keys input[name="privkey"]').value;
   console.log('privkey: ' + privkey);
 
-  browser.runtime.sendMessage({ action: "signNote", event: e, privkey: privkey }, response => {
+  window.br.sendMessage({ action: "signNote", event: e, privkey: privkey }, response => {
     console.log('Received signed note back from service worker:');
     console.log(response);
 
-    browser.runtime.sendMessage({ action: "uploadNote", note: response}, r => {
+    window.br.sendMessage({ action: "uploadNote", note: response}, r => {
       if (data) {
         data.reset();
       }
@@ -1069,7 +1079,7 @@ function updateOverlay() {
 function getPopUps(videoID) {
   // The Service Worker might be asleep when this is called, and it takes a bit to wake up the DB.
   // Disregard any responses that return null, because they're from when the DB is offline.
-  browser.runtime.sendMessage({ action: "getPopUps", videoID: videoID }, response => {
+  window.br.sendMessage({ action: "getPopUps", videoID: videoID }, response => {
     if (response != null) {
       window.allPopUps = response;
       displayAllPopUps(response);
@@ -1083,7 +1093,7 @@ function getPopUps(videoID) {
 function getProfile() {
   // The Service Worker might be asleep when this is called, and it takes a bit to wake up the DB.
   // Disregard any responses that return null, because they're from when the DB is offline.
-  browser.runtime.sendMessage({ action: "getProfile" }, response => {
+  window.br.sendMessage({ action: "getProfile" }, response => {
     if (response.profile.dbok != null) {
       displayProfile(window.pubkey, response.profile.event);
     } else {
@@ -1095,7 +1105,7 @@ function getProfile() {
 function getNostrKeys() {
   // The Service Worker might be asleep when this is called, and it takes a bit to wake up the DB.
   // Disregard any responses that return null, because they're from when the DB is offline.
-  browser.runtime.sendMessage({ action: "getNostrKeys" }, response => {
+  window.br.sendMessage({ action: "getNostrKeys" }, response => {
     if (response && response.privkey != undefined && response.profile && response.profile.dbok != undefined) {
       window.privkey = response.privkey;
       window.pubkey = response.pubkey;
